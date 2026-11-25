@@ -165,11 +165,12 @@ rewrite.
 version = "v2"
 ```
 
-`"v1"` (or no file, or no `[standard]` table) is the code as it is, with the
+`"v1"` (or no file) is the code as it is, with the
 architecture test skipped; `"v2"` is this standard, with the test enforced on
 every pull request. Any other value is refused by name. The script owns the
 `[standard]` table only: an unknown key in it is refused, other tables are
-left to their owners. Before v2 the pointer was the one line of
+left to their owners. A file with no `[standard]` table is refused, so a
+typo can't switch the checks off. Before v2 the pointer was the one line of
 `.tehas/coding-standard`; it is read only for `v1`, and a repository never
 keeps both files.
 An adopted value only goes up: a repository never writes a lower version

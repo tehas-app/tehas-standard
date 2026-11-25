@@ -37,14 +37,17 @@ version = "v3"
 
 | `version` | Means |
 | --- | --- |
-| no file, no `[standard]` table, or `"v1"` | the code as it is, with no formal definition. The architecture test is skipped and passes, saying so |
+| no file, or `"v1"` | the code as it is, with no formal definition. The architecture test is skipped and passes, saying so |
 | `"v2"` | tehas-standard v2: coding standard v2, the architecture standard and the external contracts |
 | `"v3"` | `v3/coding.md` and the files it names: the architecture, contract and plugin standards v3 and these conventions |
 | `"v3.1"`, `"v3.2"`, ... | `v3.1/coding.md` (and so on) and the files it names |
 | anything else | refused by name: a repository can't claim a standard nothing checks |
 
 The value names one version exactly: `"v3"` means `v3/coding.md` and
-nothing later.
+nothing later. A file that exists MUST have a `[standard]` table: an empty
+file, a near miss (`[Standard]`, `[standards]`, a top-level `version`) or a
+file with other tables only is refused, so a typo can't switch the checks
+off. A repository that names no standard has no file.
 
 ### 1.1 One owner for each table
 
