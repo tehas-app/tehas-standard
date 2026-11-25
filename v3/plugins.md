@@ -520,8 +520,9 @@ every capability it hands out and checks it at run time.
   checks every press and result against the plugin's grants before acting.
   Every message is typed and versioned and checked against the host's
   schema in its `api/`; one that fails is dropped. A press names one of
-  the manifest's `actions`, carries a single-use nonce and arguments under
-  that action's schema, and its answer goes only to the frame load that
+  the manifest's `actions`, carries a single-use nonce the host issued
+  (with its last message to that load; a view never makes one) and
+  arguments under that action's schema, and its answer goes only to the frame load that
   pressed, never into the output other viewers see.
   - **A frame is known by its port, never its origin** (a sandboxed frame's
     origin is `null`). The host element transfers a fresh `MessageChannel`
