@@ -103,6 +103,8 @@
 - The architecture script counts in every tracked file: a byte that is not
   UTF-8 no longer hides the file's matches (it was read as no text). Rust
   is scanned in linear time.
+- A tracked file under a directory the script cannot search stops the run
+  too (exit 2), never counted as empty.
 - A tracked file the script cannot read stops the run (exit 2) instead of
   counting as empty; a repair of an unreadable base pointer still keeps
   the base's [platform] toolchains when its file is TOML.
