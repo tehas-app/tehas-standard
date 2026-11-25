@@ -309,6 +309,11 @@ PUB = r"pub(\s*\([^)]*\))?\s+"
 ATTRS = r"(#\[[^\]]*\]\s*)*"
 
 
+# Matched in place (`.match(text, i)`), never on a slice, so a long file
+# is read once.
+RAW_STRING = re.compile(r'b?r(#*)"')
+CHAR_LITERAL = re.compile(r"'(\\.[^']*|[^\\'])'")
+
 def rust_code(text):
     """The text with comments removed and the insides of string and character
     literals blanked, line breaks kept: what the Rust standards read, so a
@@ -330,9 +335,9 @@ def rust_code(text):
                     if text[i] == "\n":
                         out.append("\n")
                     i += 1
-        elif (m := re.match(r'b?r(#*)"', text[i:])) and (i == 0 or not (text[i - 1].isalnum() or text[i - 1] == "_")):
+        elif (m := RAW_STRING.match(text, i)) and (i == 0 or not (text[i - 1].isalnum() or text[i - 1] == "_")):
             close = '"' + m.group(1)
-            j = text.find(close, i + m.end())
+            j = text.find(close, m.end())
             j = n if j < 0 else j
             out.append('""' + "\n" * text.count("\n", i, j))
             i = j + len(close)
@@ -342,9 +347,9 @@ def rust_code(text):
                 j += 2 if text[j] == "\\" else 1
             out.append('""' + "\n" * text.count("\n", i, j))
             i = j + 1
-        elif c == "'" and (m := re.match(r"'(\\.[^']*|[^\\'])'", text[i:])):
+        elif c == "'" and (m := CHAR_LITERAL.match(text, i)):
             out.append("''")
-            i += m.end()
+            i = m.end()
         else:
             out.append(c)
             i += 1
@@ -770,12 +775,12 @@ def count(entry, files, read):
         if by_list:
             # shown as written, not as the standard read it
             lines = text.split("\n")
-            hits += [(path, n, (lines[n - 1] if 0 < n <= len(lines) else line).strip())
+            hits += [(path, n, shown((lines[n - 1] if 0 < n <= len(lines) else line).strip()))
                      for n, line in by_list(path, text, entry, read)]
             continue
         for n, line in units(text, entry):
             if pattern.search(line):
-                hits.append((path, n, line.strip()))
+                hits.append((path, n, shown(line.strip())))
     return hits
 
 
@@ -798,14 +803,26 @@ def text_of(path, name):
 
 
 def reader(root):
-    """What the checks count in: a tracked file's text, or None when it holds
-    no text to count (gone, a directory, not UTF-8)."""
+    """What the checks count in: a tracked file's text, or None when there is
+    no file to read (gone, a directory). A byte that is not UTF-8 is kept as
+    a surrogate (surrogateescape), so a file is always counted: one bad byte
+    must not hide the matches around it."""
     def read(path):
+        full = os.path.join(root, path)
+        if os.path.isdir(full) or not os.path.isfile(full):
+            return None
         try:
-            return text_of(os.path.join(root, path), path)
-        except (ConfigError, OSError):
+            with open(full, "rb") as f:
+                return f.read().decode("utf-8", "surrogateescape")
+        except OSError:
             return None
     return read
+
+
+def shown(line):
+    """A counted line as it is printed: a byte that was not UTF-8 shows as
+    U+FFFD, so printing never fails."""
+    return line.encode("utf-8", "surrogateescape").decode("utf-8", "replace")
 
 
 class WorkTree:

@@ -1132,13 +1132,33 @@ class FollowUps(unittest.TestCase):
                 self.assertEqual(architecture.pointer(architecture.WorkTree(r.root)),
                                  architecture.pointer(architecture.Commit(r.root, "main"), history=True))
 
-    def test_counted_files_that_are_not_text_count_nothing(self):
+    def test_a_byte_that_is_not_utf8_hides_nothing(self):
         r = base_repo()
         with open(os.path.join(r.root, "src/bin.rs"), "wb") as f:
-            f.write(b'call("/api/z") \xff\n')
+            f.write(b'// caf\xe9\nfn z() { call("/api/z") }\n')
         r.git("add", "src/bin.rs")
         code, out = r.run()
-        self.assertEqual(code, 0, out)
+        self.assertEqual(code, 1, out)
+        self.assertIn("routes (R1): 2 places, 1 allowed", out)
+        self.assertIn("src/bin.rs:2:", out)
+
+    def test_a_bad_byte_on_the_counted_line_prints(self):
+        r = base_repo()
+        with open(os.path.join(r.root, "src/bin.rs"), "wb") as f:
+            f.write(b'fn z() { call("/api/z") } // \xff\n')
+        r.git("add", "src/bin.rs")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("src/bin.rs:1:", out)
+        self.assertIn("\ufffd", out)
+
+    def test_a_long_rust_file_is_read_in_linear_time(self):
+        import time
+        text = ('let s = r#"x"#; let c = \'a\'; let t = "y";\n' * 20000)
+        start = time.monotonic()
+        lines = architecture.rust_code(text)
+        self.assertLess(time.monotonic() - start, 2.0)
+        self.assertEqual(len(lines), 20001)
 
 
 def _toml(c):
