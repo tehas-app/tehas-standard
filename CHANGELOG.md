@@ -5,8 +5,8 @@
 - Plugin standard: `viewer:login` joins the common grants (the pressing
   person's login from the press's session; a run holding it keeps, records,
   files and asks the model nothing); name resolution and TLS trust are the
-  host's, through a named resolver and a pinned root bundle, the upstream's
-  key pinned (§5, §14).
+  host's: going direct, how it resolves is its own; a pinned root bundle
+  makes a spoofed name harmless; the upstream's key is pinned (§5, §14).
 - Destinations (plugin standard §6): manifest origins are exact and signed;
   the host's configuration may use a leftmost `*.` label only, narrows an
   adapter, may widen other networked code as a recorded choice, and never

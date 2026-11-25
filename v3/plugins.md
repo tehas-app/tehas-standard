@@ -528,14 +528,14 @@ every capability it hands out and checks it at run time.
   time; every request is recorded (origin, method, path, status, size,
   time), never its credential.
 - **Names and keys are the host's.** A plugin never resolves a name or
-  picks a certificate. With an upstream set, the host resolves no
-  supplier name and connects only to the pinned upstream, whose public
-  key (SPKI) is pinned. Going direct, the host resolves through the
-  resolver its settings name, never the system resolver or `/etc/hosts`,
-  connects to the address it checked, and refuses loopback, private,
-  link-local, multicast and cloud metadata addresses, first and on every
-  redirect. TLS is verified against a root
-  bundle the host pins, never the system trust store.
+  picks a certificate: it hands the host a request, and the host vets it
+  and makes it. With an upstream set, the host resolves no supplier name
+  and connects only to the pinned upstream, whose public key (SPKI) is
+  pinned. Going direct, how the host resolves is its own; it connects to
+  the address it checked, and refuses loopback, private, link-local,
+  multicast and cloud metadata addresses, first and on every redirect.
+  TLS is verified against a root bundle the host pins, never the system
+  trust store, which is what makes a spoofed name harmless.
 
 **In the browser (the view):**
 
