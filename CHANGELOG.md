@@ -87,6 +87,12 @@
 
 ## v2 (draft)
 
+- The v2 architecture script, `tools/architecture.py`, with its tests and
+  its sha256 in `tools/architecture.py.sha256`: one file every repository at
+  v2 copies byte for byte to `scripts/architecture.py`. It reads each pointer
+  once; a base with both pointer files counts the higher; a base whose
+  pointer cannot be read lets the head repair it by naming `v2`; a run
+  without `--base` compares with nothing.
 - Event subjects are owned: `plugin-<name>` and `annex-<name>` belong to
   the plugin and the annex, and no factory or industry raises under them
   (contracts §2).

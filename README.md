@@ -78,8 +78,10 @@ CHANGELOG.md        what each tag changed
 v2/                 tehas-standard v2: coding, architecture, contracts, patterns
 v3/                 tehas-standard v3: coding, architecture, contracts, plugins,
                     repository conventions, patterns, the architecture script's spec
-scripts/check.py    the repository's own check: links, and tagged directories unchanged
-tools/              tools a part runs: api_changes.py, the API delta between two commits
+scripts/check.py    the repository's own check: links, tagged directories unchanged,
+                    the architecture script's hash
+tools/              tools a part runs: api_changes.py, the API delta between two commits;
+                    architecture.py, the v2 architecture script (tools/README.md)
 AGENTS.md           the rules for changing this repository
 LICENSE             CC-BY-4.0, for the text
 LICENSES/           Apache-2.0, for the scripts
