@@ -8,7 +8,9 @@
   one destination list and one request gate for both sides; the manifest
   only asks; `methods` and a body policy per origin; the reserved origin
   `parent`; SNI and certificate on the approved name, no inherited proxy
-  settings, one egress process.
+  settings, every outbound request through an egress process of its own
+  user (one for views allowed), view credentials for our own plugins
+  only.
 - Plugin hardening (§14): plugin processes confined by the operating system
   (no network by kernel rule where none is needed, the request server to
   the TLS port only); TLS 1.3 or 1.2 AEAD, no 0-RTT; mutual TLS to an
