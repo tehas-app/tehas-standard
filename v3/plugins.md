@@ -121,6 +121,7 @@ the core's own code, delivered apart.
   enters the engine. Each origin says whether the credential may go to it
   (`credential: true` or `false`); the host never sends it to one that
   says `false`, nor on a redirect to one.
+- **Destinations: exact in the manifest, narrowed on the host.** See §6.
 - **Its routes are vetted.** An adapter plugin's vetted entry carries a
   route table: for each port method, its routes and the credential kind
   allowed. A route is an HTTP method and a path template, or a persisted
@@ -260,6 +261,21 @@ skills/             skill files
   `crypto.getRandomValues`, `TextEncoder`, `URL`) need no grant. Apart
   from an adapter plugin's `http.request`, there is no network, socket,
   environment or host file access.
+- **Destinations.** A manifest's origins are exact: a scheme and a host
+  (and a port only where the host allows one), no pattern. Vetting signs
+  them. A person may set a plugin's destinations in the host's
+  configuration, in one format for every kind:
+  - there, and only there, a pattern may be used: a leftmost `*.` label
+    alone, never `*`, never a public suffix (`*.com`, `*.co.uk`), never in
+    the scheme or the port;
+  - for an adapter plugin, the host's configuration only narrows what
+    the manifest and the vetted entry allow;
+  - for other code a host lets reach the network (an ordinary plugin under
+    a network grant of a later version, an annex), the configuration may
+    also widen, as an explicit choice the host records and shows in its
+    status;
+  - widening never adds a credential: an origin the configuration adds
+    gets none.
 - **`http.request`** is the host's call, not the plugin's: the host adds
   the credential, which the plugin never sees, sends the request to an
   allowed origin (or through the host's configured upstream), and returns
@@ -503,7 +519,7 @@ every capability it hands out and checks it at run time.
   its manifest and its vetted entry both list, only on a route of the port
   call in flight (a GraphQL request only as a persisted operation, by
   name and document hash), the credential only to an origin marked for
-  it; the credential is the
+  it, within the destinations the host's configuration leaves (§6); the credential is the
   host's and never enters the engine; each call has the host-call deadline,
   and a run has a request budget, a page limit, and caps on body size and
   time; every request is recorded (origin, method, path, status, size,
