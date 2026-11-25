@@ -2,6 +2,10 @@
 
 ## v3 (draft)
 
+- Adapter plugins: the vetted entry carries a route table (methods, path
+  templates and credential kind per port method), each origin says whether
+  the credential may go to it, and a host release may ship a default
+  vetted-list entry for our own adapter (plugin standard §2a, §14).
 - An adapter plugin may be one WebAssembly component built from Rust,
   implementing the host's adapter world, its imports exactly that world's
   and its I/O only `http.request` (plugin standard §2a, §8). Ordinary
