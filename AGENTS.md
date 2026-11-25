@@ -19,4 +19,5 @@ directory of its own. Read README.md and VERSIONS.md first.
   are, not how good they are.
 - **Commits** say what changed and why, with no tool-generated trailers or
   footers. Every change lands through a pull request.
-- **Check before you push:** `python3 -I scripts/check.py`.
+- **Check before you push:** `python3 -I scripts/check.py` and
+  `python3 -I -m unittest discover -s tools -p '*_test.py'`.
