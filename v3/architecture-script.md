@@ -43,7 +43,8 @@ skips every check when the value found is not `ENFORCED`. A repository at
 4. **Knows a plugin's layout.** In a repository with `tehas-plugin.json`,
    R11 to R14's checks read `src/`. `dist/` is left to the host's checks and
    the `plugin` job.
-5. **Reads `.tehas/repository.toml`**, its `[standard]` table only: an
+5. **Reads `tehas.toml`** at the root, once, its `[standard]` table: `url`
+   must be tehas-standard's and `version` one the script knows; an
    unknown key there is refused, other tables are left alone, and a file
    with no `[standard]` table is refused. The old
    one-line `.tehas/coding-standard` is read only where it says `v1`. Both at

@@ -9,12 +9,13 @@ written and run.
 
 ## The one pointer
 
-Each repository says which version of tehas-standard it follows in one
-file:
+Each repository says which standard it follows, by its full URL, and which
+version, in one file at its root:
 
 ```toml
-# .tehas/repository.toml
+# tehas.toml, at the repository root
 [standard]
+url = "https://github.com/tehas-app/tehas-standard"
 version = "v3"
 ```
 
@@ -23,7 +24,9 @@ every rule it follows: the version's `coding.md` names the architecture,
 contract and plugin standards, the patterns and the repository conventions
 valid with it.
 
-`.tehas/repository.toml` holds more than the standard as time goes on,
+The URL makes the file useful beyond tehas-standard: another standard can be
+named the same way, and its own script checks it. `tehas.toml` holds more
+than the standard as time goes on,
 one table per subject, each with one owner (a later `[platform]`, say, for
 the infrastructure a program needs). Before v2 the pointer was the one line
 of `.tehas/coding-standard`; that file is read only for `v1`.

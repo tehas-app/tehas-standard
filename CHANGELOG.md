@@ -47,7 +47,8 @@
 - No plugin standard.
 - `[platform]`: Rust 1.x and TypeScript 7.x.
 - `AGENTS.md` names the standard and its exact version first.
-- The pointer is `.tehas/repository.toml`, table `[standard]`, key `version`;
+- The pointer is `tehas.toml` at the repository root, table `[standard]`,
+  keys `url` (the standard's full URL) and `version`;
   each table of the file has one owner. Before v2 it was the one line of
   `.tehas/coding-standard`, read only for `v1`.
 - JSON Schema 2020-12 for every schema; BCP 14 key words.
