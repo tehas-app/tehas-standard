@@ -25,8 +25,14 @@ by raising its pointer. For example:
 | `v1.3` | A, C, D | removes B |
 
 `v1.1/` and `v1.2/` keep B as they were. A repository at `v1.2` is still
-held to B; it stops being held to B when it writes `v1.3`. It never gets
-rid of B by going back to `v1` or by editing `v1.2/`.
+held to B; it stops being held to B when it writes `v1.3`. It never gets rid of B by going back to `v1` or by editing `v1.2/`.
+
+**Even an undo is an upgrade.** A rule found to be a mistake, or bad, is
+taken out by a new version, and the changelog says why. The new version
+may hold exactly what an earlier one held: if `v1.4` undoes `v1.3`, it
+holds A, B, C and D again, like `v1.2`, and it is still `v1.4`, with a
+directory of its own. Repositories move up to it; none moves back to
+`v1.2`.
 
 ## Every version is a directory of its own
 
