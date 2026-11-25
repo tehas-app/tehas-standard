@@ -2,6 +2,10 @@
 
 ## v3 (draft)
 
+- Plugin hardening (§14): plugin processes confined by the operating system
+  (no network by kernel rule where none is needed, the request server to
+  the TLS port only); TLS 1.3 or 1.2 AEAD, no 0-RTT; mutual TLS to an
+  upstream; body caps after decompression, `gzip` or `identity` only.
 - Plugin standard: `viewer:login` joins the common grants (the pressing
   person's login from the press's session; a run holding it keeps, records,
   files and asks the model nothing); name resolution and TLS trust are the
