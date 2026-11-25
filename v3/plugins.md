@@ -217,8 +217,11 @@ skills/             skill files
   private `/state`); `model:<tokens>` (a token budget per run), with
   `model:images`; `view`, `menu`, `action:<id>`; `every:<interval>` and
   `clock:<when>`; `hook:<when>:<event>`; `tool:<id>`; `record`;
-  `issue:draft`; `http`, for an adapter plugin only (§2a), refused to any
-  other. A host may add its own; it lists them in its spec.
+  `issue:draft`; `viewer:login`, the one piece of a person's data a host
+  gives a view: the login of the person who pressed, taken from that
+  press's own session, never from the message; a run that holds it can't
+  keep it, record it, file issues or call the model; `http`, for an adapter
+  plugin only (§2a), refused to any other. A host may add its own; it lists them in its spec.
 - **Grants an admin gives by hand.** Turning a plugin on never gives a grant
   that holds or acts on a person's path:
   - `hook:before:<event>=<policy>` (a gate; a gate grant with no policy is
@@ -524,6 +527,13 @@ every capability it hands out and checks it at run time.
   and a run has a request budget, a page limit, and caps on body size and
   time; every request is recorded (origin, method, path, status, size,
   time), never its credential.
+- **Names and keys are the host's.** A plugin never resolves a name or
+  picks a certificate. With an upstream set, the host resolves no
+  supplier name and connects only to the pinned upstream, whose public
+  key (SPKI) is pinned. Going direct, the host resolves through the
+  resolver its settings name, never the system resolver or `/etc/hosts`,
+  and checks each address as §6 says. TLS is verified against a root
+  bundle the host pins, never the system trust store.
 
 **In the browser (the view):**
 
