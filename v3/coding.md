@@ -281,8 +281,9 @@ does not make its own:
 - the model only through `tehas.model.chat`, never a provider's client,
   address or key;
 - files, state and code only through the host API (`fs.*`, `git.*`);
-  there is no other I/O inside the engine, except an adapter plugin's
-  `http.request` to its listed origins, the credential held by the host;
+  there is no other I/O inside the engine, except `http.request` (an
+  adapter plugin's, or a driver's under `net:`) to its destinations, the
+  credential held by the host;
 - heavy pure compute in a WebAssembly module of its own (`wasm.load`),
   never a second engine; a hot path two plugins share is asked of the
   host as a host function;
