@@ -7,9 +7,12 @@
 2. A tagged version directory is unchanged: for each tag vN or vN.M, the
    directory of the same name equals its state at the tag.
 3. Every tagged version has its directory.
+4. `tools/architecture.py.sha256` is the sha256 of `tools/architecture.py`,
+   the hash a repository checks its copy against.
 
 Exit 0 when all hold, 1 otherwise, naming each failure.
 """
+import hashlib
 import pathlib
 import re
 import subprocess
@@ -47,8 +50,19 @@ def tagged_directories() -> list[str]:
     return bad
 
 
+def architecture_hash() -> list[str]:
+    script = ROOT / "tools" / "architecture.py"
+    published = ROOT / "tools" / "architecture.py.sha256"
+    if not published.is_file():
+        return ["tools/architecture.py.sha256: missing"]
+    want = f"{hashlib.sha256(script.read_bytes()).hexdigest()}  architecture.py\n"
+    if published.read_text(encoding="utf-8") != want:
+        return [f"tools/architecture.py.sha256: not the hash of tools/architecture.py; write: {want.strip()}"]
+    return []
+
+
 def main() -> int:
-    bad = links() + tagged_directories()
+    bad = links() + tagged_directories() + architecture_hash()
     for line in bad:
         print(line)
     print("ok" if not bad else f"{len(bad)} failure(s)")
