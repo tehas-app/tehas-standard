@@ -231,8 +231,8 @@ checker for its language, in strict mode, in a CI job named `types`.
 
 | Language | Where | Checker | Escape hatch counted |
 | --- | --- | --- | --- |
-| JavaScript and TypeScript | pages: `.js`/`.mjs` with JSDoc, no compile step; plugins: `.ts`, `.tsx`, `.js`, `.jsx` in `src/` | TypeScript's `tsc`, pinned by the host, `--strict` (`--checkJs` for `.js`), against the host's generated types (`tehas.d.ts`) and the kit's (`solid.d.ts`, and `kit.d.ts` once the kit ships it); a plugin that types `.tsx` adds `@solidjs/web` at the kit's version as a type-only dev dependency | `@ts-ignore`, `@ts-nocheck`, `any`, `{*}` |
-| Rust | programs; the source of a plugin's WebAssembly module in `src/` | `cargo clippy -- -D warnings` | `#[allow(` |
+| JavaScript and TypeScript | pages: `.js`/`.mjs` with JSDoc, no compile step; plugins: `.ts`, `.tsx`, `.js`, `.jsx` in `src/` | TypeScript's native `tsc` 7.x (`[platform] typescript = "7.x"`), pinned exactly by the repository, `--strict` (`--checkJs` for `.js`), against the host's generated types (`tehas.d.ts`) and the kit's (`solid.d.ts`, and `kit.d.ts` once the kit ships it); a plugin that types `.tsx` adds `@solidjs/web` at the kit's version as a type-only dev dependency | `@ts-ignore`, `@ts-nocheck`, `any`, `{*}` |
+| Rust | programs; the source of a plugin's WebAssembly module in `src/` | `cargo clippy -- -D warnings`, on Rust 1.x (`[platform] rust = "1.x"`) | `#[allow(` |
 | Python | tools and scripts (not a tehas plugin language) | `mypy --strict` on Python 3.11 or later | `# type: ignore`, `Any` |
 | Shell | scripts that hold no logic a test needs | `shellcheck` | `# shellcheck disable` |
 

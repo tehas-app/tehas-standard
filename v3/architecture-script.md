@@ -49,8 +49,17 @@ skips every check when the value found is not `ENFORCED`. A repository at
    one-line `.tehas/coding-standard` is read only where it says `v1`. Both at
    once is refused. Replacing the old file with the new one is not a
    deletion.
-6. **Refuses a downgrade.** With `--base`, a `[standard] version` lower than the base's fails, naming both. Removing the file counts as writing `v1`.
-7. **Keeps v2's rules for the test itself:** ratchets that fail above and
+6. **Checks `[platform]`**: each key one it knows (`rust`, `typescript`),
+   each value a major this version allows (`"1.x"`, `"7.x"`), and each exact
+   pin in the repository's own files (`rust-toolchain.toml`, its versions
+   file) within that major.
+7. **Checks `AGENTS.md`** names the same tehas-standard version as
+   `[standard] version`.
+8. **Refuses a `--base` that is not a commit** in the repository, and reads
+   the base's files by their git mode, so a symlink or directory there is
+   named.
+9. **Refuses a downgrade.** With `--base`, a `[standard] version` lower than the base's fails, naming both. Removing the file counts as writing `v1`.
+10. **Keeps v2's rules for the test itself:** ratchets that fail above and
    below their `max`; with `--base`, a raised `max`, a removed check or a
    changed scope needs a new `why`.
 

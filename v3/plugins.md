@@ -345,6 +345,63 @@ tehas-standard version it meets:
 - [ ] It reaches models only through `model.chat`.
 - [ ] Our own: `.tehas/repository.toml` at `"v3"`, architecture test green.
 
+## 14. Hardening
+
+A host treats every plugin as untrusted code, on the server and in the
+browser: no static check proves a plugin harmless, so the host controls
+every capability it hands out and checks it at run time.
+
+**On the host (the operator):**
+
+- **A narrow repository view.** An input grant gives a prepared view, never
+  the clone: tracked files at the commit only; `.env` and `.env.*`, private
+  keys, credential and token files and `.git/` left out by default (a
+  repository may add paths, never remove these); symlinks resolved while
+  the view is prepared, one that leaves the view or reaches an excluded path
+  left out; `fs.*` and `git.*` behind the same view.
+- **A deadline on every host call.** Epoch and fuel interrupt WebAssembly,
+  not a blocked host function, so each host function has its own deadline,
+  enforced by the host.
+- **Budgets per run** on host calls and bytes read, beside memory, time,
+  fuel, output and model tokens. A spent budget fails the call.
+- **Output is untrusted data.** Everything a run returns is bounded and
+  escaped before anyone sees it: terminal control sequences stripped,
+  Markdown and HTML escaped, links only as text or to the plugin's own view.
+- **No precompiled code from a plugin.** The host compiles every module
+  itself. `dist/` holding precompiled or native code is refused; the host's
+  compiled cache is its own, and each entry's hash is checked before it is
+  loaded.
+- **A versioned interface.** The host API's WIT package carries a version
+  (`tehas:plugin@2.0.0`) whose major matches the manifest's `"plugin"`; its
+  functions are on the host's surface list, so they only grow within a
+  major.
+- **No secrets out.** What a run returns is scanned for secret patterns and
+  redacted before it is published.
+
+**In the browser (the view):**
+
+- **The frame is a sandbox.** The host's element frames the view in an
+  `<iframe sandbox="allow-scripts">` without `allow-same-origin`: an opaque
+  origin with no cookies, no storage and no session; no popups, forms, top
+  navigation, downloads or modals; a CSP of `default-src 'none'` with
+  scripts and styles by hash and `connect-src 'none'`. Its one channel is
+  `postMessage` with the host element, which sends the granted data and
+  checks every press and result against the plugin's grants before acting.
+- **Devices take two keys.** Every device and powerful feature is denied by
+  `Permissions-Policy`, unless the manifest asks `device:<feature>` and an
+  admin grants it; then the host element delegates exactly that feature,
+  the browser asks the person, and the element shows a lasting sign naming
+  the plugin while the device is in use.
+- **WebAssembly in the browser is boxed third-party code.** A view module is
+  pure compute: its imports are memory and a short list of glue helpers; an
+  import that binds a web API is refused at vetting. It runs only in a
+  dedicated module worker, served with `default-src 'none'; script-src
+  'self' 'wasm-unsafe-eval'`, inside the sandboxed frame: no DOM, no
+  network, bytes in and out through `postMessage`. A vendored codec is
+  verified by its upstream hash and meets the same rules.
+- **A result reaches the host only through the host element**, under a
+  grant, checked for type and size. A plugin never uploads anything itself.
+
 ## Open for the owner
 
 - Whether `kind` is one shared list in this standard or each host's own,

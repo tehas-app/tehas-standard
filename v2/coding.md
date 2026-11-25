@@ -179,6 +179,23 @@ than it has adopted.
 A minor of v2 is a new directory, `v2.1/`; this file does not change. A repository takes it by writing `v2.1` once its script knows it:
 the v2 script knows only `v1` and `v2`, the v3 script knows the minors.
 
+The `[platform]` table names the toolchains the repository builds with, at
+the majors this version allows: `rust = "1.x"` and `typescript = "7.x"`. A
+repository lists only the ones it uses, and pins the exact version where it
+always has (`rust-toolchain.toml`, its versions file, CI). An unknown key or
+another major is refused. With `--base`, a base that is not a commit in the
+repository is refused, never read as a base with no standard.
+
+`AGENTS.md` names the standard and its exact version in its first section,
+so an agent reads it before anything else:
+
+```
+This repository follows tehas-standard v2 (`.tehas/repository.toml`):
+https://github.com/tehas-app/tehas-standard/tree/v2/v2
+```
+
+(Until tehas-standard is tagged, the link points at `main`.)
+
 A repository at `v2` keeps `AGENTS.md`'s architecture section,
 `docs/architecture.md` (the knowledge map, ports, departures, grades),
 `docs/architecture-review.md`, `docs/architecture-rubric.md`,

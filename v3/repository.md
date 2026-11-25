@@ -60,10 +60,24 @@ has one owner, the program that reads it:
 - a table and its keys enter by a minor of this standard, which names the
   owner. `[standard]` is the architecture script's.
 
-Tables that may come, each once its owner exists: `[platform]` (the
-infrastructure the program needs to run: operating system, init system,
-container runtimes, CPU architectures, resources; its owner the
-infrastructure tooling), `[plugin]` (that the repository is a plugin, and its
+`[platform]` names what the repository needs from its platform. From v2 it
+holds the toolchains it builds with, at the majors this version allows, and
+the architecture script owns it:
+
+```toml
+[platform]
+rust = "1.x"
+typescript = "7.x"
+```
+
+A repository lists only the toolchains it uses and pins the exact version
+where it always has (`rust-toolchain.toml`, its versions file, CI); the
+script checks that each pin is within the major. The infrastructure the
+program needs to run (operating system, init system, container runtimes,
+CPU architectures, resources) joins the table by a later minor, with the
+infrastructure tooling as its reader.
+
+Tables that may come, each once its owner exists: `[plugin]` (that the repository is a plugin, and its
 manifest number), `[kit]` (the kit version a repository pins), `[release]`
 (the surface step's settings, contracts C3). What a factory needs to build
 and preview a product stays in `.tehas/needs.toml`, the factory's own file.
@@ -85,7 +99,7 @@ larger one, planned from the diff of the two version directories (see
 | File | What |
 | --- | --- |
 | `.tehas/repository.toml` | §1 |
-| `AGENTS.md` | an architecture section: the rules in short, a link to this standard at its tag, and every departure the repository takes. Style stays the repository's own |
+| `AGENTS.md` | first, the standard and its exact version ("This repository follows tehas-standard v3 (`.tehas/repository.toml`)" and a link to `v3/` at its tag), so an agent reads it before anything else; then an architecture section: the rules in short and every departure the repository takes. The architecture script checks that the version named matches `[standard] version`. Style stays the repository's own |
 | `docs/architecture.md` | the repository's architecture description (§2.1): the knowledge map (each piece of knowledge, its owner, where else it is known, with counts); the ports with their adapters and fakes; the departures with their reasons; the table of grades, appended, never rewritten |
 | `docs/adr/` | decision records, one per decision, `NNNN-<slug>.md`, in the MADR 4.0 template |
 | `docs/architecture-review.md` | the review questions (§5), copied from this standard's tag |
