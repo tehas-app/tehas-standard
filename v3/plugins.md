@@ -493,6 +493,10 @@ every capability it hands out and checks it at run time.
   operator, and the adapter host for adapters) each run as an operating
   system user of their own, never the core's user, and reach the core
   only through its sockets.
+- **Confined by the operating system, too.** A process that runs plugins
+  and needs no network gets none, by a kernel rule, not only by the
+  engine's interface; the one that serves `http.request` may send only to
+  the TLS port, and the host lists in its spec how it confines each.
 
 - **A narrow repository view.** An input grant gives a prepared view, never
   the clone: tracked files at the commit only; `.env` and `.env.*`, private
@@ -536,6 +540,13 @@ every capability it hands out and checks it at run time.
   multicast and cloud metadata addresses, first and on every redirect.
   TLS is verified against a root bundle the host pins, never the system
   trust store, which is what makes a spoofed name harmless.
+- **The connection itself.** TLS 1.3, or 1.2 with AEAD suites only; no
+  0-RTT early data, so a replayed write cannot repeat. To an upstream, the
+  host also proves itself: mutual TLS with a client certificate per host,
+  bound to that host's key.
+- **Bodies are capped as read.** An answer's size cap counts the bytes
+  after decompression, and only `gzip` or `identity` encodings are
+  accepted.
 
 **In the browser (the view):**
 
