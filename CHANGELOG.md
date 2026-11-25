@@ -2,6 +2,9 @@
 
 ## v3 (draft)
 
+- The API changes tool, `tools/api_changes.py` (contracts C3): the delta
+  between two commits' `api/`, for the CI job summary and the release
+  notes; in a minor it marks removals and changes, in a patch everything.
 - Adapter plugins (plugin standard §2a): `kind: "adapter"`, our own only,
   called by the core and never acting on their own, outside the plugins
   switch, carrying out the core's writes; their one way out is

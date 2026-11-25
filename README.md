@@ -79,6 +79,7 @@ v2/                 tehas-standard v2: coding, architecture, contracts, patterns
 v3/                 tehas-standard v3: coding, architecture, contracts, plugins,
                     repository conventions, patterns, the architecture script's spec
 scripts/check.py    the repository's own check: links, and tagged directories unchanged
+tools/              tools a part runs: api_changes.py, the API delta between two commits
 AGENTS.md           the rules for changing this repository
 LICENSE             CC-BY-4.0, for the text
 LICENSES/           Apache-2.0, for the scripts

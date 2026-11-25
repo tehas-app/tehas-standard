@@ -83,6 +83,18 @@ building, and may change in any release.
   adds no public name, a minor only adds, only a major may remove. So the
   delta between two minors of one major is additions only, and the
   release notes' "Added in <minor>" list is that delta.
+- **The delta is written by a tool, not by hand.** tehas-standard's
+  `tools/api_changes.py` reads two commits' `api/` (the newest surface
+  list, `commands.txt` and the other lists, every `*.schema.json`: each
+  field's type, enum, const and whether it is required) and writes what
+  was added, removed and changed. A part SHOULD run it:
+  - on every pull request, against the base, into the CI job summary;
+  - in its release workflow, tag to tag, as the release notes' "API
+    changes in vX.Y.Z", with `--from`, `--to` and `--strict`, so a removal
+    or change in a minor, or any change in a patch, stops the tag.
+
+  A part copies the file at a tag of tehas-standard and does not edit it;
+  a change is made here.
 - **The gate** fails when:
   - the current minor's file is not what the generator writes from the
     code;
