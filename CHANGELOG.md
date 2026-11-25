@@ -2,6 +2,10 @@
 
 ## v3 (draft)
 
+- An adapter plugin may be one WebAssembly component built from Rust,
+  implementing the host's adapter world, its imports exactly that world's
+  and its I/O only `http.request` (plugin standard §2a, §8). Ordinary
+  plugins keep core modules only.
 - The API changes tool, `tools/api_changes.py` (contracts C3): the delta
   between two commits' `api/`, for the CI job summary and the release
   notes; in a minor it marks removals and changes, in a patch everything.
