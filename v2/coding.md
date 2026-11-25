@@ -1,7 +1,7 @@
 # Coding standard v2
 
 Part of tehas-standard v2. A repository follows it when its
-`.tehas/repository.toml` says `[standard] version = "v2"` (see §4). It names:
+`tehas.toml` says `[standard] version = "v2"` (see §4). It names:
 
 | With coding standard v2 | Valid version |
 | --- | --- |
@@ -158,17 +158,19 @@ rewrite.
 
 ## 4. The pointer and the files a repository keeps
 
-`.tehas/repository.toml` names the standard in its `[standard]` table:
+`tehas.toml`, at the repository root, names the standard in its
+`[standard]` table, by its full URL and the version:
 
 ```toml
 [standard]
+url = "https://github.com/tehas-app/tehas-standard"
 version = "v2"
 ```
 
 `"v1"` (or no file) is the code as it is, with the
 architecture test skipped; `"v2"` is this standard, with the test enforced on
-every pull request. Any other value is refused by name. The script owns the
-`[standard]` table only: an unknown key in it is refused, other tables are
+every pull request. Any other value is refused by name. `url` must be tehas-standard's: another standard brings its own script.
+The script owns the `[standard]` table (and, for now, `[platform]`): an unknown key in it is refused, other tables are
 left to their owners. A file with no `[standard]` table, or a symlink, is refused, so a typo
 can't switch the checks off. With `--base` the script refuses a head that
 names a lower standard than its base, or none where the base names one. Before v2 the pointer was the one line of
@@ -190,7 +192,7 @@ repository is refused, never read as a base with no standard.
 so an agent reads it before anything else:
 
 ```
-This repository follows tehas-standard v2 (`.tehas/repository.toml`):
+This repository follows tehas-standard v2 (`tehas.toml`):
 https://github.com/tehas-app/tehas-standard/tree/v2/v2
 ```
 

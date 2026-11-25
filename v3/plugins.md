@@ -343,7 +343,7 @@ tehas-standard version it meets:
       upstream hash) and, for our own, rebuild to the same bytes.
 - [ ] Its tests run in the engine with fake host functions.
 - [ ] It reaches models only through `model.chat`.
-- [ ] Our own: `.tehas/repository.toml` at `"v3"`, architecture test green.
+- [ ] Our own: `tehas.toml` at `"v3"`, architecture test green.
 
 ## 14. Hardening
 

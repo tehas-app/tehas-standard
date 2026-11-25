@@ -24,14 +24,16 @@ requirement.
 - [SLSA v1.1](https://slsa.dev/spec/v1.1/), Build track, for release workflows a host trusts (§8).
 - Informative: [arc42](https://arc42.org/overview) and the [C4 model](https://c4model.com/), for `docs/architecture.md`; [Diátaxis](https://diataxis.fr/), for `docs/`.
 
-## 1. The pointer: `.tehas/repository.toml`
+## 1. The pointer: `tehas.toml`
 
-One TOML file says how the repository is kept. Its `[standard]` table names
-the tehas-standard version the repository follows:
+One TOML file at the repository root says how the repository is kept, for
+the tehas system. Its `[standard]` table names the standard by its full URL
+and the version the repository follows:
 
 ```toml
 # How this repository is kept. Each table has one owner.
 [standard]
+url = "https://github.com/tehas-app/tehas-standard"
 version = "v3"
 ```
 
@@ -43,7 +45,10 @@ version = "v3"
 | `"v3.1"`, `"v3.2"`, ... | `v3.1/coding.md` (and so on) and the files it names |
 | anything else | refused by name: a repository can't claim a standard nothing checks |
 
-The value names one version exactly: `"v3"` means `v3/coding.md` and
+`url` names the standard; a script checks only its own, and another
+standard brings its own script. `.tehas/` stays for a project's own items
+(what a factory reads, such as `needs.toml` and `definition/`). The value
+of `version` names one version exactly: `"v3"` means `v3/coding.md` and
 nothing later. A file that exists MUST have a `[standard]` table: an empty
 file, a near miss (`[Standard]`, `[standards]`, a top-level `version`) or a
 file with other tables only is refused, so a typo can't switch the checks
@@ -86,7 +91,7 @@ and preview a product stays in `.tehas/needs.toml`, the factory's own file.
 
 Before v2 the pointer was the one line of `.tehas/coding-standard`. It is read
 only when it says `v1`. A repository that writes `"v2"` or later deletes it in
-the same commit that writes `.tehas/repository.toml`, and never keeps both.
+the same commit that writes `tehas.toml`, and never keeps both.
 
 A repository takes a minor by writing it, in a pull request of its own.
 The value only goes up: a pull request that writes a lower version than
@@ -98,8 +103,8 @@ larger one, planned from the diff of the two version directories (see
 
 | File | What |
 | --- | --- |
-| `.tehas/repository.toml` | §1 |
-| `AGENTS.md` | first, the standard and its exact version ("This repository follows tehas-standard v3 (`.tehas/repository.toml`)" and a link to `v3/` at its tag), so an agent reads it before anything else; then an architecture section: the rules in short and every departure the repository takes. The architecture script checks that the version named matches `[standard] version`. Style stays the repository's own |
+| `tehas.toml` | §1 |
+| `AGENTS.md` | first, the standard and its exact version ("This repository follows tehas-standard v3 (`tehas.toml`)" and a link to `v3/` at its tag), so an agent reads it before anything else; then an architecture section: the rules in short and every departure the repository takes. The architecture script checks that the version named matches `[standard] version`. Style stays the repository's own |
 | `docs/architecture.md` | the repository's architecture description (§2.1): the knowledge map (each piece of knowledge, its owner, where else it is known, with counts); the ports with their adapters and fakes; the departures with their reasons; the table of grades, appended, never rewritten |
 | `docs/adr/` | decision records, one per decision, `NNNN-<slug>.md`, in the MADR 4.0 template |
 | `docs/architecture-review.md` | the review questions (§5), copied from this standard's tag |
@@ -222,7 +227,7 @@ may be tagged at any grade, but no band may fall below the last grade's.
 ## 7. Releases of a part
 
 - A part's version is its own. It names the tehas-standard version it
-  follows in `.tehas/repository.toml`, not in its version number, and the
+  follows in `tehas.toml`, not in its version number, and the
   two never imply each other ([../VERSIONS.md](../VERSIONS.md)).
 - A part may move to a new standard version in any of its releases, in a
   pull request of its own with the checks that enforce it, and its release
