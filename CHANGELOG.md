@@ -20,6 +20,8 @@
   `plugin` CI jobs and the review questions for R11 to R14 and C1 to C9.
 - The architecture script learns `v3` and minors, enforces in order and
   refuses a version it does not know.
+- MCP servers in the contracts: the protocol revisions a server speaks,
+  each tool's input and output schema in `api/`, tools on the surface list.
 - Formats: JSON Schema 2020-12 for objects, OpenAPI 3.1 for routes,
   AsyncAPI 3.0 for events (contracts C2); MADR 4.0 for decision records,
   arc42 sections for `docs/architecture.md`, Diátaxis for `docs/`, SLSA
