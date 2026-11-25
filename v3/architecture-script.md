@@ -39,7 +39,10 @@ skips every check when the value found is not `ENFORCED`. A repository at
    `vendor-unlisted` checks where the repository has pages or views,
    `ts-strict` and the escape counts for each language present,
    `model-pure`, and `plugin-provider` for a plugin. A check may hold a
-   `max` above 0 with a `why`; it may not be missing.
+   `max` above 0 with a `why`; it may not be missing. A check's `rule` may
+   name any rule of the version found: `R1` to `R14` at `v3` (the v2
+   script knows only `R1` to `R10`), so a check is filed under its true
+   rule; a rule the version does not have is refused by name.
 4. **Knows a plugin's layout.** In a repository with `tehas-plugin.json`,
    R11 to R14's checks read `src/`. `dist/` is left to the host's checks and
    the `plugin` job.
@@ -71,6 +74,8 @@ skips every check when the value found is not `ENFORCED`. A repository at
 - `v3` is enforced, not skipped;
 - `v3.1` is enforced with the checks `v3.1/coding.md` names;
 - `v4`, which the script does not know, is refused by name;
+- at `v3` a check with `rule = "R11"` (and `R12` to `R14`) is accepted, `R15`
+  is refused by name, and at `v2` `R11` is refused;
 - `v3` with a required check missing fails and names the check;
 - in a plugin repository, a `kit-solid-import` match in `dist/` is not
   counted, one in a `src/` view file is allowed, and one elsewhere in
