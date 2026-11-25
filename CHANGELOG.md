@@ -2,6 +2,10 @@
 
 ## v3 (draft)
 
+- The view frame (plugin standard §14): known by a `MessageChannel` port the
+  host transfers per load, never by origin; caps on message size, rate and
+  presses in flight; a press that acts as the person needs a confirm in
+  the host's own page.
 - Plugin standard: the manifest names its `actions` (press arguments under a
   schema); the view channel's messages are typed, versioned and checked,
   a press carries a single-use nonce and its answer goes only to the
