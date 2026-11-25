@@ -532,7 +532,9 @@ every capability it hands out and checks it at run time.
   supplier name and connects only to the pinned upstream, whose public
   key (SPKI) is pinned. Going direct, the host resolves through the
   resolver its settings name, never the system resolver or `/etc/hosts`,
-  and checks each address as §6 says. TLS is verified against a root
+  connects to the address it checked, and refuses loopback, private,
+  link-local, multicast and cloud metadata addresses, first and on every
+  redirect. TLS is verified against a root
   bundle the host pins, never the system trust store.
 
 **In the browser (the view):**
