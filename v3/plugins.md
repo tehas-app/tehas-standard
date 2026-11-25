@@ -71,8 +71,9 @@ An adapter plugin keeps them except where §2a says otherwise.
 6. **Nothing without a grant.** Each grant opens one group of host
    functions; a call no grant covers is refused before any work is done.
 7. **Signed in, always.** Every address of a plugin is behind the host's
-   sign-in. A view loads nothing from another site. (How a host signs a
-   person in is its own.)
+   sign-in. A view loads nothing from another site itself: it reaches
+   one only through the host's proxy, under `net:` (§14). (How a host
+   signs a person in is its own.)
 8. **Writes only through the host.** A plugin never writes to the product,
    the code host or the host's store; the host writes what a run returns.
    The one exception planned is `issue:advisory` (§5), an admin's
@@ -217,7 +218,8 @@ skills/             skill files
   private `/state`); `model:<tokens>` (a token budget per run), with
   `model:images`; `view`, `menu`, `action:<id>`; `every:<interval>` and
   `clock:<when>`; `hook:<when>:<event>`; `tool:<id>`; `record`;
-  `issue:draft`; `viewer:login`, the one piece of a person's data a host
+  `issue:draft`; `net:`, a plugin's network on either side, through the
+  host only (§6, §14); `viewer:login`, the one piece of a person's data a host
   gives a view: the login of the person who pressed, taken from that
   press's own session, never from the message; a run that holds it can't
   keep it, record it, file issues or call the model; `http`, for an adapter
@@ -257,28 +259,42 @@ skills/             skill files
   | `model.chat(req)` | `model:<tokens>` (images: `model:images`) |
   | `run.module(path, argv, env)` | always |
   | `wasm.load(name)` | a module the manifest lists |
-  | `http.request(req)` | `http`: an adapter plugin only, to an origin its manifest and its vetted entry both list |
+  | `http.request(req)` | `http`: an adapter plugin only (§2a); or `net:`, an ordinary plugin's driver; to its destinations (§6) |
   | `log(...)` | always |
 
   The engine's own web APIs (`crypto.subtle.digest`,
   `crypto.getRandomValues`, `TextEncoder`, `URL`) need no grant. Apart
-  from an adapter plugin's `http.request`, there is no network, socket,
-  environment or host file access.
+  from `http.request` (an adapter's, or a driver's under `net:`), there is
+  no network, socket, environment or host file access.
 - **Destinations.** A manifest's origins are exact: a scheme and a host
-  (and a port only where the host allows one), no pattern. Vetting signs
-  them. A person may set a plugin's destinations in the host's
-  configuration, in one format for every kind:
+  (and a port only where the host allows one), no pattern, each with its
+  `methods` and its body policy (`none` or `bounded`). The manifest only
+  asks: an origin is granted by the signed vetted entry (our own) or by
+  the person (third party), and vetting signs what it grants. A person
+  may set a plugin's destinations in the host's configuration, in one
+  format for every kind:
   - there, and only there, a pattern may be used: a leftmost `*.` label
     alone, never `*`, never a public suffix (`*.com`, `*.co.uk`), never in
     the scheme or the port;
   - for an adapter plugin, the host's configuration only narrows what
     the manifest and the vetted entry allow;
   - for other code a host lets reach the network (an ordinary plugin under
-    a network grant of a later version, an annex), the configuration may
+    `net:`, an annex), the configuration may
     also widen, as an explicit choice the host records and shows in its
     status;
   - widening never adds a credential: an origin the configuration adds
     gets none.
+- **One list, one gate, both sides.** A plugin has one list of
+  destinations for its server side (`http.request`, a driver under
+  `net:`) and its view alike; narrowing closes an origin for both. One
+  request gate in the host vets every request from every side, with the
+  same rules and one record format. Only the credential kinds differ by
+  side.
+- **The parent.** The reserved origin id `parent` is the app the plugin
+  runs in. It needs no manifest entry, a manifest may not declare it, and
+  the host's configuration cannot narrow it away. It reaches only the
+  routes the hosting app publishes for plugins, never with the person's
+  session cookie, and a write to it needs the person's confirm (§14).
 - **`http.request`** is the host's call, not the plugin's: the host adds
   the credential, which the plugin never sees, sends the request to an
   allowed origin (or through the host's configured upstream), and returns
@@ -522,8 +538,8 @@ every capability it hands out and checks it at run time.
   major.
 - **No secrets out.** What a run returns is scanned for secret patterns and
   redacted before it is published.
-- **`http.request` is fenced.** Only an adapter plugin's, only to an origin
-  its manifest and its vetted entry both list, only on a route of the port
+- **`http.request` is fenced.** Only an adapter plugin's, or a driver's under
+  `net:`, only to an origin granted to it (§6), only on a route of the port
   call in flight (a GraphQL request only as a persisted operation, by
   name and document hash), the credential only to an origin marked for
   it, within the destinations the host's configuration leaves (§6); the credential is the
@@ -541,7 +557,10 @@ every capability it hands out and checks it at run time.
   TLS is verified against a root bundle the host pins, never the system
   trust store, which is what makes a spoofed name harmless.
 - **The connection itself.** TLS 1.3, or 1.2 with AEAD suites only; no
-  0-RTT early data, so a replayed write cannot repeat. To an upstream, the
+  0-RTT early data, so a replayed write cannot repeat. The SNI and the
+  certificate are checked against the approved name. Proxy settings from
+  the environment are ignored, and one host process makes every outbound
+  request. To an upstream, the
   host also proves itself: mutual TLS with a client certificate per host,
   bound to that host's key.
 - **Bodies are capped as read.** An answer's size cap counts the bytes
@@ -554,7 +573,8 @@ every capability it hands out and checks it at run time.
   `<iframe sandbox="allow-scripts">` without `allow-same-origin`: an opaque
   origin with no cookies, no storage and no session; no popups, forms, top
   navigation, downloads or modals; a CSP of `default-src 'none'` with
-  scripts and styles by hash and `connect-src 'none'`. Its one channel is
+  scripts and styles by hash and `connect-src 'none'`, unless the plugin
+  has `net:` (below). Its one channel is
   `postMessage` with the host element, which sends the granted data and
   checks every press and result against the plugin's grants before acting.
   Every message is typed and versioned and checked against the host's
@@ -574,6 +594,19 @@ every capability it hands out and checks it at run time.
     or uses the person's credential) needs a confirm drawn in the host
     element's own page, outside the frame, naming the action's manifest
     label. A nonce proves a message is fresh, not that a person clicked.
+- **A view's network is only through the host.** With `net:`, the view
+  makes normal HTTPS requests, but the frame's CSP lets them reach only
+  the host's proxy, under a token minted for that load, scoped to the
+  plugin, the load and its origins, short-lived and never in a cookie.
+  The kit maps a URL to an origin id (a relative one to `parent`) and an
+  unmapped URL is refused. The proxy runs the request gate; it takes no
+  `Cookie` or `Authorization` from the view and returns no `Set-Cookie`.
+  A view gets no credential, with one kind of exception: an origin the
+  vetted entry marks for a view credential gets a read-only credential
+  narrowed to the one target, for free-form reads only (one read
+  operation per request, a depth and a cost cap, a budget per load);
+  writes from a view go only through persisted `actions` with the
+  person's confirm.
 - **Devices take two keys.** Every device and powerful feature is denied by
   `Permissions-Policy`, unless the manifest asks `device:<feature>` and an
   admin grants it; then the host element delegates exactly that feature,
