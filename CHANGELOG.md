@@ -2,18 +2,22 @@
 
 ## v3 (draft)
 
+- With an upstream set, every call goes through it, a person's call too,
+  with the person's own credential forwarded untouched; the sign-in's code
+  exchange is an upstream route; the upstream enforces the vetted origins
+  per credential class; the signing job checks a blessed merge's approving
+  review (plugin standard §11, §14).
 - A view's worker is a `blob:` worker under the frame's policy, since an
-  opaque-origin frame can start no other; the upstream rule names only
-  traffic through it, as calls acting as a person go direct; the size of
-  `bounded` is the host's (plugin standard §6, §9, §14).
+  opaque-origin frame can start no other; the size of `bounded` is the
+  host's (plugin standard §6, §9, §14).
 - Plugin standard, from the host spec's revision 7: a view's network goes
   over its port to the host element and the request gate, the frame
   `connect-src 'none'` always (no proxy, no load token); blessed plugins,
   trusted like the host's code, changed only at a release or an admin's
   pin, the only home of adapters; the upstream authenticated by mutual
-  TLS alone, trusted by a pinned key set, never for calls that act as a
-  person; `parent` reach is not authority (each route names its grant, the
-  lesser of person and plugin, no view writes by request); destination
+  TLS alone, trusted by a pinned key set; `parent` reach is not authority
+  (each route names its grant, the lesser of person and plugin, no view
+  writes by request); destination
   patterns optional before `net:`; audit jobs without identity, secrets
   or network, apart from the one signing job.
 - Plugin network (plugin standard §2, §5, §6, §14): `net:` for either side,

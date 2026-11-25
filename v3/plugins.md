@@ -459,7 +459,8 @@ plugin that fails:
   own, the truth of its answers included. It changes only at a host
   release (its default entry) or by an admin's pin, never by a newer
   signed entry on its own, and its repository requires a person's review
-  of every change.
+  of every change: the signing job checks that the merge of the commit it
+  signs had a person's approving review, and signs nothing without one.
 - **The audit and the signing are apart.** The audit jobs that run
   plugin code have no signing identity, no secrets and no network. The
   one job that signs runs no plugin code.
@@ -567,11 +568,10 @@ every capability it hands out and checks it at run time.
   time), never its credential.
 - **Names and keys are the host's.** A plugin never resolves a name or
   picks a certificate: it hands the host a request, and the host vets it
-  and makes it. For traffic that goes through an upstream, the host
-  resolves no supplier name and connects only to the pinned upstream,
-  whose public key (SPKI) is pinned. For traffic that goes direct (all of
-  it with no upstream, and calls that act as a person, which never go
-  through one), how the host resolves is its own; it connects to
+  and makes it. With an upstream set, all of it goes through the
+  upstream: the host resolves no supplier name and connects only to the
+  pinned upstream, whose public key (SPKI) is pinned. With no upstream, it
+  goes direct, and how the host resolves is its own; it connects to
   the address it checked, and refuses loopback, private, link-local,
   multicast and cloud metadata addresses, first and on every redirect.
   TLS is verified against a root bundle the host pins, never the system
@@ -587,8 +587,15 @@ every capability it hands out and checks it at run time.
 - **The upstream.** The host and its upstream authenticate each other by
   mutual TLS alone: a client certificate per host, bound to its key, and
   the upstream trusted by its pinned key set and its name, with no public
-  CA chain needed. No key in a header stands in for it. A call that acts
-  as a person never goes through the upstream.
+  CA chain needed. No key in a header stands in for it.
+  - **A call that acts as a person** goes through the upstream with the
+    person's own short-lived credential, which the host attaches; the
+    upstream forwards it untouched and never puts its own in its place.
+    A sign-in's code exchange is a route of the upstream, which holds the
+    client secret.
+  - **The upstream is no open proxy.** It enforces, itself, the vetted
+    entry's origins for each credential class, and refuses anything
+    else.
 - **Bodies are capped as read.** An answer's size cap counts the bytes
   after decompression, and only `gzip` or `identity` encodings are
   accepted.
