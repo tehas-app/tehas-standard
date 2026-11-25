@@ -2,6 +2,8 @@
 
 ## v3 (draft)
 
+- The v3 script accepts a check's `rule` as any rule of the version found
+  (`R1` to `R14` at `v3`), and refuses one the version lacks.
 - Adapter routes cover GraphQL as persisted operations (name and document
   hash, mutations only in write methods, the target filled in by the
   host); plugin code runs as its own operating system user, apart from
