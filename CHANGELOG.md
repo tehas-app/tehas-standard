@@ -30,7 +30,7 @@
   isolation; each rule names the patterns it rests on.
 - Each version is a directory of its own, complete, never edited once
   tagged; a minor is a full copy (`v3.1/`).
-- `.tehas/coding-standard` accepts minors (`v3.1`), from the v3 script on.
+- `.tehas/standard` accepts minors (`v3.1`).
 
 ## v2 (draft)
 
@@ -39,6 +39,8 @@
 - The architecture standard: A1 to A6, rules across repositories.
 - External contracts: C1 to C9 and the catalogue of the system's seams.
 - No plugin standard.
+- The pointer file is `.tehas/standard` (before v2 `.tehas/coding-standard`,
+  read only for `v1`).
 - JSON Schema 2020-12 for every schema; BCP 14 key words.
 - Architecture patterns: the published patterns R1 to R10, A1 to A5 and C1
   to C9 rest on, each rule naming its own.

@@ -9,17 +9,21 @@ written and run.
 
 ## The one pointer
 
-Each repository says which version it follows in one file:
+Each repository says which version of tehas-standard it follows in one
+file, its standard:
 
 ```
-.tehas/coding-standard
+.tehas/standard
 v3
 ```
 
 From that line a person or an agent picking up any piece of code finds
-every rule it follows: the coding standard of that version names the
-architecture, plugin and contract standards valid with it, and the
-repository conventions.
+every rule it follows: the version's `coding.md` names the architecture,
+contract and plugin standards, the patterns and the repository conventions
+valid with it.
+
+Before v2 the file was called `.tehas/coding-standard`; the old name is read
+only for `v1`.
 
 ## What a version holds
 

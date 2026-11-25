@@ -24,7 +24,7 @@ requirement.
 - [SLSA v1.1](https://slsa.dev/spec/v1.1/), Build track, for release workflows a host trusts (§8).
 - Informative: [arc42](https://arc42.org/overview) and the [C4 model](https://c4model.com/), for `docs/architecture.md`; [Diátaxis](https://diataxis.fr/), for `docs/`.
 
-## 1. The pointer: `.tehas/coding-standard`
+## 1. The pointer: `.tehas/standard`
 
 One file, one line: the tehas-standard version the repository follows.
 Lines that start with `#` are comments.
@@ -38,7 +38,11 @@ Lines that start with `#` are comments.
 | anything else | refused by name: a repository can't claim a standard nothing checks |
 
 The value names one version exactly: `v3` means `v3/coding.md`
-and nothing later. A repository takes a minor by writing it, in a pull request of its own.
+and nothing later. Before v2 the file was called `.tehas/coding-standard`. The old name is read
+only for `v1`; a repository that writes `v2` or later renames it in the same
+commit, and never keeps both.
+
+A repository takes a minor by writing it, in a pull request of its own.
 The value only goes up: a pull request that writes a lower version than
 its base has fails the `architecture` job. A minor is a small step, so that pull request is small; a major is a
 larger one, planned from the diff of the two version directories (see
@@ -48,7 +52,7 @@ larger one, planned from the diff of the two version directories (see
 
 | File | What |
 | --- | --- |
-| `.tehas/coding-standard` | §1 |
+| `.tehas/standard` | §1 |
 | `AGENTS.md` | an architecture section: the rules in short, a link to this standard at its tag, and every departure the repository takes. Style stays the repository's own |
 | `docs/architecture.md` | the repository's architecture description (§2.1): the knowledge map (each piece of knowledge, its owner, where else it is known, with counts); the ports with their adapters and fakes; the departures with their reasons; the table of grades, appended, never rewritten |
 | `docs/adr/` | decision records, one per decision, `NNNN-<slug>.md`, in the MADR 4.0 template |
@@ -172,7 +176,7 @@ may be tagged at any grade, but no band may fall below the last grade's.
 ## 7. Releases of a part
 
 - A part's version is its own. It names the tehas-standard version it
-  follows in `.tehas/coding-standard`, not in its version number, and the
+  follows in `.tehas/standard`, not in its version number, and the
   two never imply each other ([../VERSIONS.md](../VERSIONS.md)).
 - A part may move to a new standard version in any of its releases, in a
   pull request of its own with the checks that enforce it, and its release
