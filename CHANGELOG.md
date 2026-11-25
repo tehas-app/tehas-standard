@@ -20,6 +20,10 @@
   `plugin` CI jobs and the review questions for R11 to R14 and C1 to C9.
 - The architecture script learns `v3` and minors, enforces in order and
   refuses a version it does not know.
+- Plugin hardening (plugin standard §14): a narrow repository view,
+  host-call deadlines and budgets, output escaped, no precompiled code, a
+  versioned WIT package, secrets redacted, the view in a sandboxed frame,
+  devices by two keys, browser WebAssembly as boxed third-party code.
 - MCP servers in the contracts: the protocol revisions a server speaks,
   each tool's input and output schema in `api/`, tools on the surface list.
 - Formats: JSON Schema 2020-12 for objects, OpenAPI 3.1 for routes,
@@ -41,6 +45,8 @@
 - The architecture standard: A1 to A6, rules across repositories.
 - External contracts: C1 to C9 and the catalogue of the system's seams.
 - No plugin standard.
+- `[platform]`: Rust 1.x and TypeScript 7.x.
+- `AGENTS.md` names the standard and its exact version first.
 - The pointer is `.tehas/repository.toml`, table `[standard]`, key `version`;
   each table of the file has one owner. Before v2 it was the one line of
   `.tehas/coding-standard`, read only for `v1`.
