@@ -32,6 +32,7 @@ requirement.
 - [JSON Schema 2020-12](https://json-schema.org/draft/2020-12) (Core and Validation), for every object schema.
 - [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.1), for every external HTTP route.
 - [AsyncAPI 3.0](https://www.asyncapi.com/docs/reference/specification/v3.0.0), for every external event API.
+- The [Model Context Protocol specification](https://modelcontextprotocol.io/specification), at the revisions a server names, for every external MCP server.
 - The [Component Model](https://component-model.bytecodealliance.org/) and its WIT, for a plugin host API.
 - Informative: [CloudEvents 1.0.2](https://github.com/cloudevents/spec), see § Open.
 
@@ -61,6 +62,7 @@ written beside it. The formats:
 | an object (a `--json` answer, a setting file, an event's payload, a manifest) | JSON Schema 2020-12; each file declares `"$schema": "https://json-schema.org/draft/2020-12/schema"` |
 | an HTTP route (the industry API's routes, an annex plant's routes, the host bridge) | an OpenAPI 3.1 document, `api/openapi.yaml`, whose schemas reference the files of `api/`, never copy them |
 | an event API (the factory's events, the events the industry raises) | an AsyncAPI 3.0 document, `api/asyncapi.yaml`, referencing the event schemas |
+| an MCP server (its tools, resources and prompts) | the Model Context Protocol specification revisions it speaks, named in its document; each tool's input and output schema as JSON Schema 2020-12 in `api/`, the same schemas the server answers `tools/list` with, tested against the server |
 | a plugin host API | a WIT world |
 | a command line | the command list (`api/commands.txt`) and the contract's exit statuses |
 
@@ -69,7 +71,8 @@ its public names for each minor release of the part in a generated file of
 its own, `api/surface-<major>.<minor>.txt` (`api/surface-2.1.txt`): one
 name per line, its kind first, sorted. Every kind of public name is in it:
 commands, flags, exit statuses, settings and values, routes, fields, labels,
-event names, host functions. A name not on the list is internal or
+event names, host functions, MCP tools with their arguments and result
+fields. A name not on the list is internal or
 building, and may change in any release.
 
 - **Kept, never edited.** The file of a released minor never changes. The
@@ -158,7 +161,7 @@ table says what crosses, which way, and where the reader looks.
 | **The factory API** | the factory (tehas) | the industry, annexes, people, scripts | commands, flags and exit statuses; `--json` objects (`status`, `history`, `question`, `start`, `answer`, `limit`, `drain`, `order`, ...); `tehas api --json`, the index of the rest | tehas `host/docs/contract.md`, `host/docs/api.md` | tehas `api/*.schema.json`, `api/commands.txt`, `api/surface-<v>.txt` |
 | **Factory settings** | the factory | the industry (which writes them), people | the settings and their values, by the knob rule | tehas `host/docs/contract.md` | tehas `api/settings-rules.json` |
 | **Factory events** | the factory | the industry, plugins, annexes | the event names and each event's object, pull first (each is also a fact the factory API prints) | tehas `docs/specs/<date>-events.md` | tehas `api/event.schema.json`, `api/event-<name>.schema.json`, `api/events.txt` |
-| **The factory's MCP server** | the factory | agents, the work cycle | tools, their arguments and answers | tehas `host/docs/mcp-server.md` | the tool list it prints |
+| **The factory's MCP server** | the factory | agents, the work cycle | tools, their arguments and answers | tehas `host/docs/mcp-server.md` (protocol revisions `2026-07-28` and `2025-11-25`) | each tool's input and output schema in tehas's `api/` (not yet written; the schemas live in the code today) |
 | **The host bridge** | the factory (its side) | the industry, which answers it | `/host/bridge.json` on the factory's origin: data the dashboard draws natively | tehas `host/docs/api.md`, the host bridge | tehas `api/host-bridge.schema.json` |
 | **The industry API** | the industry | its operator, annexes, the factories' pages, end-to-end tests | its commands and `--json` objects, its routes, its settings, the events it raises from its polls | the industry's `docs/contract.md`, `docs/mcp.md` | the industry's `api/*.schema.json`, `api/surface-<v>.txt` |
 | **The model gateway** | the industry | factories, annex plants | a model call in a supported shape (`openai-completions`, `anthropic-messages`) with the caller's budget; an endpoint's address from the industry's settings | the industry's gateway document | the shapes are the suppliers' published APIs; budgets in the industry's settings schema |
@@ -215,6 +218,11 @@ is tagged into tehas-standard only when it has:
 - **Earlier surface lists.** Parts that renamed their list at a major
   (`surface-1.0.txt` became `surface-2.0.txt`) recover the earlier files
   from their release tags when they move to v3, as far as the tags allow.
+- **MCP tool schemas.** tehas's MCP server keeps its tools' schemas in its
+  code, and its surface list has no tool lines (2026-11-25). It writes them
+  into `api/` and its surface list when it moves to v3. An industry or
+  annex plant that serves MCP does the same; a part that is only an MCP
+  client has nothing to record.
 - **The two description documents are new.** No part has an
   `api/openapi.yaml` or `api/asyncapi.yaml` yet (2026-11-25). Each part writes them when it moves to v3, from the schemas it already
   has.
