@@ -559,8 +559,11 @@ every capability it hands out and checks it at run time.
 - **The connection itself.** TLS 1.3, or 1.2 with AEAD suites only; no
   0-RTT early data, so a replayed write cannot repeat. The SNI and the
   certificate are checked against the approved name. Proxy settings from
-  the environment are ignored, and one host process makes every outbound
-  request. To an upstream, the
+  the environment are ignored. Every outbound request leaves through an
+  egress process of the host, run as a user of its own, where the request
+  gate runs; a host may keep one for the server side and one for views. A
+  process that runs plugin code, or only relays a view's requests, never
+  connects out itself. To an upstream, the
   host also proves itself: mutual TLS with a client certificate per host,
   bound to that host's key.
 - **Bodies are capped as read.** An answer's size cap counts the bytes
@@ -601,8 +604,9 @@ every capability it hands out and checks it at run time.
   The kit maps a URL to an origin id (a relative one to `parent`) and an
   unmapped URL is refused. The proxy runs the request gate; it takes no
   `Cookie` or `Authorization` from the view and returns no `Set-Cookie`.
-  A view gets no credential, with one kind of exception: an origin the
-  vetted entry marks for a view credential gets a read-only credential
+  A view gets no credential, with one kind of exception, for our own
+  signed plugins only: an origin the vetted entry marks for a view
+  credential gets a read-only credential
   narrowed to the one target, for free-form reads only (one read
   operation per request, a depth and a cost cap, a budget per load);
   writes from a view go only through persisted `actions` with the
