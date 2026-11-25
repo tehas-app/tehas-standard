@@ -2,6 +2,9 @@
 
 ## v3 (draft)
 
+- Event subjects are owned: `plugin-<name>` and `annex-<name>` belong to
+  the plugin and the annex, and no host raises under them (contracts §2,
+  plugin standard §10). Carrying plugin events is open.
 - Coding standard v3: R11 (the host's kit, verified vendor libraries), R12
   (one pinned strict checker per language, with a ratchet), R13 (pure
   models and plugin drivers, tested), R14 (a plugin uses the host's
@@ -40,6 +43,9 @@
 
 ## v2 (draft)
 
+- Event subjects are owned: `plugin-<name>` and `annex-<name>` belong to
+  the plugin and the annex, and no factory or industry raises under them
+  (contracts §2).
 - Coding standard v2: R1 to R10, the knowledge map, the architecture test as
   ratchets, review questions and grading on four bands.
 - The architecture standard: A1 to A6, rules across repositories.
