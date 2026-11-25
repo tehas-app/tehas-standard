@@ -18,10 +18,12 @@ v3
 ```
 
 From that line a person or an agent picking up any piece of code finds
-every rule it follows. (Before v2 the file was called
-`.tehas/coding-standard`; the old name is read only for `v1`.) the coding standard of that version names the
-architecture, plugin and contract standards valid with it, and the
-repository conventions.
+every rule it follows: the version's `coding.md` names the architecture,
+contract and plugin standards, the patterns and the repository conventions
+valid with it.
+
+Before v2 the file was called `.tehas/coding-standard`; the old name is read
+only for `v1`.
 
 ## What a version holds
 
