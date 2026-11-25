@@ -523,6 +523,17 @@ every capability it hands out and checks it at run time.
   the manifest's `actions`, carries a single-use nonce and arguments under
   that action's schema, and its answer goes only to the frame load that
   pressed, never into the output other viewers see.
+  - **A frame is known by its port, never its origin** (a sandboxed frame's
+    origin is `null`). The host element transfers a fresh `MessageChannel`
+    port on each load and listens only on it; a new load revokes the old
+    port and its nonces, and the view's kit takes messages only on its
+    port. So no frame can speak for another.
+  - **Caps** on a message's bytes and on messages per load, and one press
+    in flight per load.
+  - **A press that acts as the person** (it files under the person's name
+    or uses the person's credential) needs a confirm drawn in the host
+    element's own page, outside the frame, naming the action's manifest
+    label. A nonce proves a message is fresh, not that a person clicked.
 - **Devices take two keys.** Every device and powerful feature is denied by
   `Permissions-Policy`, unless the manifest asks `device:<feature>` and an
   admin grants it; then the host element delegates exactly that feature,
