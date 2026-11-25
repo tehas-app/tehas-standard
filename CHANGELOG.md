@@ -30,8 +30,8 @@
   the kit; WebAssembly modules as pure compute; trust through a signed
   vetted list for our own plugins and a person's approval for the rest;
   grants an admin gives by hand for anything on a person's path.
-  (`issue:advisory` and `feed:advisories` are queued for the host spec's
-  revision 5 and need the owner's OK.)
+  (`issue:advisory` and `feed:advisories` come with guard's pull request;
+  `issue:advisory` waits for the owner's OK there.)
 - External contracts: the plugin host API, the vetted list and plugin
   surface requests join the catalogue.
 - Repository conventions move to their own page, with the `types` and
