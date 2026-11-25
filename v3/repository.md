@@ -47,7 +47,7 @@ The value names one version exactly: `"v3"` means `v3/coding.md` and
 nothing later. A file that exists MUST have a `[standard]` table: an empty
 file, a near miss (`[Standard]`, `[standards]`, a top-level `version`) or a
 file with other tables only is refused, so a typo can't switch the checks
-off. A repository that names no standard has no file.
+off; so is a symlink. A repository that names no standard has no file.
 
 ### 1.1 One owner for each table
 
