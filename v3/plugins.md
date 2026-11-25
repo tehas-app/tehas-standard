@@ -119,6 +119,13 @@ the core's own code, delivered apart.
 - **Its one way out** is `http.request` (§6), to the origins its manifest
   and its vetted entry both list. The host holds the credential; it never
   enters the engine.
+- **Its own world.** An adapter plugin implements the host's adapter world
+  (tehas: `tehas:adapter`), made from the host's port types: the ports as
+  exports; `http.request`, `log` and the host state the ports need as
+  imports. It has no files, git, model, sockets, environment or arguments.
+- **JavaScript or one component.** An adapter plugin is either JavaScript in
+  the engine, like any plugin, or one WebAssembly component built from
+  Rust that implements the adapter world itself (§8).
 - **Refused or unreachable is the port's failure.** Guarantee 4 binds
   ordinary plugins: an adapter plugin that is refused or down fails the
   core's call as an adapter does (coding standard R6), never skipped in
@@ -159,8 +166,9 @@ skills/             skill files
 - `"plugin": 2`. A host refuses a number it does not know.
 - It names: the plugin's `name`, `label`, `kind` (`adapter` for an adapter
   plugin, §2a; other kinds are the host's) and `license`; the
-  `runtime` (reserved; `"starlingmonkey"` is the only value with this
-  version); the `timeout` of a run; what it `asks`; its view; each
+  `runtime` (`"starlingmonkey"`, the engine, the only value for an
+  ordinary plugin with this version; `"component"` for an adapter plugin
+  built as one component, §8); the `timeout` of a run; what it `asks`; its view; each
   WebAssembly module by name, with an optional source path and build
   recipe; each vendor library with its version, upstream and per-file
   hashes; for an adapter plugin, the `origins` it may reach; the `solid-js` version its compiled view expects; its schedules
@@ -203,7 +211,8 @@ skills/             skill files
 ## 6. The host API
 
 - **One interface, written once in WIT** as the world `tehas:plugin`, in the
-  host's `api/`. The host's side and `tehas.d.ts` are generated from it, so
+  host's `api/`; an adapter plugin's is the host's adapter world (§2a),
+  written the same way. The host's side and `tehas.d.ts` are generated from it, so
   the types a builder sees can't drift from what the host provides. No
   `u64`: sizes, counts and times are `u32` or `f64`.
 - **The functions** and the grant each needs:
@@ -285,7 +294,24 @@ plugin that fails:
   result packed as `ptr << 32 | len`.
 - **Features.** wasmtime's defaults (SIMD, bulk memory, multi-value,
   reference types) are allowed. Threads, shared memory and memory64 are
-  refused. Core modules only; the component model comes later.
+  refused. Core modules only; the component model comes later, with the
+  one exception below.
+- **An adapter plugin may be one component.** Our own adapter plugin MAY be
+  a single WebAssembly component, built from Rust, in `dist/wasm/` and
+  named in its manifest, in place of a driver in the engine. The adapter
+  world (§2a) is its seam:
+  - its imports are exactly the adapter world's, listed from the binary
+    (`wasm-tools component wit` or the same), and any other import, a WASI
+    interface beyond random and the clocks included, is refused at
+    vetting;
+  - its host I/O goes only through `http.request`, under §6 and §14;
+  - the audit above holds for every core module inside it, and it must
+    match its rebuild from source;
+  - threads, shared memory and memory64 are refused as above;
+  - inside, coding standard R3 and R13 hold: decisions in pure modules,
+    the `http.request` calls in one shell module.
+
+  An ordinary plugin keeps core modules only.
 - **Our own plugins must match** their rebuild. For a third-party plugin
   the approver decides whether "binary only" is acceptable.
 - **When.** A hot loop of one plugin. Heavy work on data that starts in the
@@ -400,7 +426,9 @@ tehas-standard version it meets:
       green. Until v3 is tagged, `"v2"` is the bridge. A third-party
       plugin SHOULD keep the same file.
 - [ ] An adapter plugin: on the vetted list, `kind: "adapter"`, asks
-      `http` and nothing a view, schedule, hook, tool or gate needs.
+      `http` and nothing a view, schedule, hook, tool or gate needs; built
+      as JavaScript or as one component whose imports are exactly the
+      adapter world.
 
 ## 14. Hardening
 
