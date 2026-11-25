@@ -43,9 +43,9 @@ skips every check when the value found is not `ENFORCED`. A repository at
 4. **Knows a plugin's layout.** In a repository with `tehas-plugin.json`,
    R11 to R14's checks read `src/`. `dist/` is left to the host's checks and
    the `plugin` job.
-5. **Reads `.tehas/standard`**, and `.tehas/coding-standard` where a
-   repository is still at `v1` or `v2`. Both at once is refused. A rename
-   from the old name to the new one in the move to `v3` is not a deletion.
+5. **Reads `.tehas/standard`**, and the old name `.tehas/coding-standard`
+   only where it says `v1`. Both at once is refused. A rename from the old
+   name to the new one is not a deletion.
 6. **Refuses a downgrade.** With `--base`, a `.tehas/standard` value
    lower than the base's fails, naming both. Removing the file counts as
    writing `v1`.
@@ -66,8 +66,8 @@ skips every check when the value found is not `ENFORCED`. A repository at
   `src/` (a driver) is counted;
 - with `--base` at `v3`, writing `v2` fails, and so does deleting the
   file;
-- with `--base` at `v2` in `.tehas/coding-standard`, renaming it to
-  `.tehas/standard` with `v3` passes; keeping both fails;
+- `v2` in the old name `.tehas/coding-standard` is refused and asks for
+  the rename; `v1` there passes; keeping both fails;
 - a file whose hash is not the tag's fails.
 
 ## When it lands

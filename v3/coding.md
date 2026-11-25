@@ -333,4 +333,4 @@ it does not ship a component into that page.
 | No type rule | R12: one pinned strict checker per language, with a ratchet |
 | R3 for Rust only, in practice | R13: R3 for JavaScript models and plugin drivers |
 | No plugin rule | R14 and the plugin standard (`"plugin": 2`) |
-| `.tehas/coding-standard`: `v1` or `v2` | `.tehas/standard`: adds `v3`, and minors as `v3.1` ([v3/repository.md](repository.md) §1) |
+| `.tehas/standard`: `v1` or `v2` | adds `v3`, and minors as `v3.1` ([v3/repository.md](repository.md) §1) |

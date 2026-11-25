@@ -38,9 +38,9 @@ Lines that start with `#` are comments.
 | anything else | refused by name: a repository can't claim a standard nothing checks |
 
 The value names one version exactly: `v3` means `v3/coding.md`
-and nothing later. Until v2 the file was `.tehas/coding-standard`. The pull request that moves a
-repository to `v3` renames it to `.tehas/standard`, in the same commit that
-writes `v3`; that rename is not a deletion. A repository never keeps both.
+and nothing later. Before v2 the file was called `.tehas/coding-standard`. The old name is read
+only for `v1`; a repository that writes `v2` or later renames it in the same
+commit, and never keeps both.
 
 A repository takes a minor by writing it, in a pull request of its own.
 The value only goes up: a pull request that writes a lower version than

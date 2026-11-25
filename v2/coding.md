@@ -1,7 +1,7 @@
 # Coding standard v2
 
 Part of tehas-standard v2. A repository follows it when its
-`.tehas/coding-standard` says `v2` (see §4). It names:
+`.tehas/standard` says `v2` (see §4). It names:
 
 | With coding standard v2 | Valid version |
 | --- | --- |
@@ -158,7 +158,8 @@ rewrite.
 
 ## 4. The pointer and the files a repository keeps
 
-`.tehas/coding-standard` holds one line: `v1` (or no file) for the code as
+`.tehas/standard` holds one line (before v2 the file was called
+`.tehas/coding-standard`; the old name is read only for `v1`): `v1` (or no file) for the code as
 it is, with the architecture test skipped; `v2` for this standard, with the
 test enforced on every pull request. Any other value is refused by name.
 An adopted value only goes up: a repository never writes a lower version
