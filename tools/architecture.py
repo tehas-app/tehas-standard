@@ -806,7 +806,8 @@ def reader(root):
     """What the checks count in: a tracked file's text, or None when there is
     no file to read (gone, a directory). A byte that is not UTF-8 is kept as
     a surrogate (surrogateescape), so a file is always counted: one bad byte
-    must not hide the matches around it."""
+    must not hide the matches around it. A file that is there but cannot be
+    read (its permissions, say) is a ConfigError, never "no text"."""
     def read(path):
         full = os.path.join(root, path)
         if os.path.isdir(full) or not os.path.isfile(full):
@@ -814,8 +815,9 @@ def reader(root):
         try:
             with open(full, "rb") as f:
                 return f.read().decode("utf-8", "surrogateescape")
-        except OSError:
-            return None
+        except OSError as e:
+            raise ConfigError(f"{path}: tracked, but cannot be read ({e.strerror or e}); "
+                              f"a file the checks cannot read is never counted as empty")
     return read
 
 
@@ -1034,18 +1036,42 @@ def no_downgrade(base, found, platform):
     A base whose pointer is there but Unreadable would refuse every pull
     request, the one that repairs it too. Then the head must name ENFORCED,
     the highest standard this script knows, so it cannot be lower than
-    whatever the base meant, and the base's [platform] is not compared."""
+    whatever the base meant. The base's [platform] is still compared when
+    its file is TOML (only its [standard] is bad); it is not compared only
+    when the file cannot be parsed at all."""
     try:
         was, before = pointer(base, history=True)
     except Unreadable as e:
         if found != ENFORCED:
             raise ConfigError(f"{e}; with the base's standard unreadable, this head must name {ENFORCED}, "
                               f"the highest standard this script knows")
+        parsed, before = base_platform(base)
+        platform_kept(base, before, platform)
+        compared = ("its [platform] is compared" if parsed
+                    else "the base's [platform] is not compared, since its file cannot be parsed")
         return [f"The base's standard cannot be read ({e}). This head names {ENFORCED}, the highest this "
-                f"script knows, so it is no downgrade; the base's [platform] is not compared."]
+                f"script knows, so it is no downgrade; {compared}."]
     if was is not None and (found is None or rank(found) < rank(was)):
         raise ConfigError(f"the standard goes down from {was} at {base.ref} to {found or 'none'}; "
                           f"an adopted standard only goes up")
+    platform_kept(base, before, platform)
+    return []
+
+
+def base_platform(base):
+    """(whether the base's tehas.toml parsed as TOML, its [platform]), for a
+    base whose [standard] is bad."""
+    try:
+        text = base.read(STANDARD_FILE)
+        if text is None:
+            return False, None
+        return True, parse_toml(text, base.where(STANDARD_FILE)).get("platform")
+    except ConfigError:
+        return False, None
+
+
+def platform_kept(base, before, platform):
+    """A toolchain the base declares may not disappear at the head."""
     after = platform if isinstance(platform, dict) else {}
     if before is not None and not isinstance(before, dict):
         # The base declared its toolchains in a shape that has no keys to
@@ -1058,7 +1084,6 @@ def no_downgrade(base, found, platform):
         if gone:
             raise ConfigError(f"[platform] loses {', '.join(gone)} against {base.ref}; "
                               f"a declared toolchain only moves forward")
-    return []
 
 
 def rank(version):

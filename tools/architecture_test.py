@@ -1074,7 +1074,21 @@ class FollowUps(unittest.TestCase):
                 code, out = r.run("--base", "main")
                 self.assertEqual(code, 0, out)
                 self.assertIn("The base's standard cannot be read (main:tehas.toml:", out)
-                self.assertIn("the base's [platform] is not compared", out)
+                parses = not isinstance(broken, bytes) and not broken.startswith("[standard\n")
+                self.assertIn("its [platform] is compared" if parses
+                              else "the base's [platform] is not compared", out)
+
+    def test_7_a_repair_keeps_the_base_toolchains(self):
+        bad = f'[standard]\nurl = "{URL}"\nversion = "strict"\n\n[platform]\nrust = "1.x"\n'
+        r = self.repo_at({"tehas.toml": bad})
+        self.head(r, {"tehas.toml": pointer("v2")})
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 2, out)
+        self.assertIn("[platform] loses rust against main", out)
+        self.head(r, {"tehas.toml": pointer("v2") + '\n[platform]\nrust = "1.x"\n'})
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 0, out)
+        self.assertIn("its [platform] is compared", out)
 
     def test_7_a_malformed_base_file_still_needs_the_highest_standard(self):
         for head in ({"tehas.toml": pointer("v1")}, {}):
@@ -1141,6 +1155,18 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("routes (R1): 2 places, 1 allowed", out)
         self.assertIn("src/bin.rs:2:", out)
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root reads any file")
+    def test_a_tracked_file_that_cannot_be_read_stops_the_run(self):
+        r = base_repo()
+        path = os.path.join(r.root, "src/web.rs")
+        os.chmod(path, 0)
+        try:
+            code, out = r.run()
+        finally:
+            os.chmod(path, 0o644)
+        self.assertEqual(code, 2, out)
+        self.assertIn("src/web.rs: tracked, but cannot be read", out)
 
     def test_a_bad_byte_on_the_counted_line_prints(self):
         r = base_repo()

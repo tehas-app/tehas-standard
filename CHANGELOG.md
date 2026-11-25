@@ -103,6 +103,9 @@
 - The architecture script counts in every tracked file: a byte that is not
   UTF-8 no longer hides the file's matches (it was read as no text). Rust
   is scanned in linear time.
+- A tracked file the script cannot read stops the run (exit 2) instead of
+  counting as empty; a repair of an unreadable base pointer still keeps
+  the base's [platform] toolchains when its file is TOML.
 - The v2 architecture script, `tools/architecture.py`, with its tests and
   its sha256 in `tools/architecture.py.sha256`: one file every repository at
   v2 copies byte for byte to `scripts/architecture.py`. It reads each pointer
