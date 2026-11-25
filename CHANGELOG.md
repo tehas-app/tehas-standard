@@ -2,6 +2,10 @@
 
 ## v3 (draft)
 
+- A view's worker is a `blob:` worker under the frame's policy, since an
+  opaque-origin frame can start no other; the upstream rule names only
+  traffic through it, as calls acting as a person go direct; the size of
+  `bounded` is the host's (plugin standard §6, §9, §14).
 - Plugin standard, from the host spec's revision 7: a view's network goes
   over its port to the host element and the request gate, the frame
   `connect-src 'none'` always (no proxy, no load token); blessed plugins,

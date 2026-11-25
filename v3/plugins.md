@@ -270,7 +270,8 @@ skills/             skill files
   no network, socket, environment or host file access.
 - **Destinations.** A manifest's origins are exact: a scheme and a host
   (and a port only where the host allows one), no pattern, each with its
-  `methods` and its body policy (`none` or `bounded`). The manifest only
+  `methods` and its body policy (`none` or `bounded`; the bound is the
+  host's, and a host may write it in the manifest as its own extension). The manifest only
   asks: an origin is granted by the signed vetted entry (our own) or by
   the person (third party), and vetting signs what it grants. A person
   may set a plugin's destinations in the host's configuration, in one
@@ -413,8 +414,9 @@ plugin that fails:
   compiled output expects; the host refuses one its kit does not carry.
   A builder who types `.tsx` adds `@solidjs/web` at the kit's version as a
   type-only dev dependency.
-- **Heavy view work** runs in a WebAssembly module in a module worker,
-  declared in the manifest, under §8's audit. The view's policy allows
+- **Heavy view work** runs in a WebAssembly module in a module worker
+  started from a `blob:` URL, under the frame's policy (§14), declared in
+  the manifest, under §8's audit. The view's policy allows
   `'wasm-unsafe-eval'` only for a view that declares modules. A view
   module's imports are met by the plugin's own glue JS, and worker code
   does not import the kit. A vendored `.wasm` is verified by its upstream
@@ -565,9 +567,11 @@ every capability it hands out and checks it at run time.
   time), never its credential.
 - **Names and keys are the host's.** A plugin never resolves a name or
   picks a certificate: it hands the host a request, and the host vets it
-  and makes it. With an upstream set, the host resolves no supplier name
-  and connects only to the pinned upstream, whose public key (SPKI) is
-  pinned. Going direct, how the host resolves is its own; it connects to
+  and makes it. For traffic that goes through an upstream, the host
+  resolves no supplier name and connects only to the pinned upstream,
+  whose public key (SPKI) is pinned. For traffic that goes direct (all of
+  it with no upstream, and calls that act as a person, which never go
+  through one), how the host resolves is its own; it connects to
   the address it checked, and refuses loopback, private, link-local,
   multicast and cloud metadata addresses, first and on every redirect.
   TLS is verified against a root bundle the host pins, never the system
@@ -641,9 +645,12 @@ every capability it hands out and checks it at run time.
 - **WebAssembly in the browser is boxed third-party code.** A view module is
   pure compute: its imports are memory and a short list of glue helpers; an
   import that binds a web API is refused at vetting. It runs only in a
-  dedicated module worker, served with `default-src 'none'; script-src
-  'self' 'wasm-unsafe-eval'`, inside the sandboxed frame: no DOM, no
-  network, bytes in and out through `postMessage`. A vendored codec is
+  dedicated module worker that the frame starts from a `blob:` URL (an
+  opaque-origin frame can start no other), so the worker runs under the
+  frame's own policy, `connect-src 'none'` included, with
+  `'wasm-unsafe-eval'` only for a view that declares modules: no DOM, no
+  network, the module's bytes and its results in and out through
+  `postMessage`. A vendored codec is
   verified by its upstream hash and meets the same rules.
 - **A result reaches the host only through the host element**, under a
   grant, checked for type and size. A plugin never uploads anything itself.
