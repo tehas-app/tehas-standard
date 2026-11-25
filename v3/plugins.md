@@ -118,7 +118,20 @@ the core's own code, delivered apart.
   adapter or not, has a merge grant.
 - **Its one way out** is `http.request` (§6), to the origins its manifest
   and its vetted entry both list. The host holds the credential; it never
-  enters the engine.
+  enters the engine. Each origin says whether the credential may go to it
+  (`credential: true` or `false`); the host never sends it to one that
+  says `false`, nor on a redirect to one.
+- **Its routes are vetted.** An adapter plugin's vetted entry carries a
+  route table: for each port method, the HTTP methods, the path templates
+  and the credential kind allowed. The host refuses a request that is not
+  in the routes of the port call in flight.
+- **A release may ship a default entry.** Guarantee 2's "on no host
+  release" binds ordinary plugins. A host release may ship a default
+  vetted-list entry for our own adapter plugin, so a host that has chosen
+  no adapter runs that entry. It is an entry like any other: signed, a
+  full commit, the `dist/` hash, its origins and routes. It is not a pin
+  in the release's code, and a newer signed entry may replace it between
+  releases.
 - **Its own world.** An adapter plugin implements the host's adapter world
   (tehas: `tehas:adapter`), made from the host's port types: the ports as
   exports; `http.request`, `log` and the host state the ports need as
@@ -171,7 +184,8 @@ skills/             skill files
   built as one component, §8); the `timeout` of a run; what it `asks`; its view; each
   WebAssembly module by name, with an optional source path and build
   recipe; each vendor library with its version, upstream and per-file
-  hashes; for an adapter plugin, the `origins` it may reach; the `solid-js` version its compiled view expects; its schedules
+  hashes; for an adapter plugin, the `origins` it may reach, each with
+  whether the credential may go to it; the `solid-js` version its compiled view expects; its schedules
   (`every:`, `clock:`); its hook points.
 - An endpoint plugin (a model provider) is a manifest only: id, API shape
   (`openai-completions` or `anthropic-messages`) and models. Its address
@@ -464,7 +478,8 @@ every capability it hands out and checks it at run time.
 - **No secrets out.** What a run returns is scanned for secret patterns and
   redacted before it is published.
 - **`http.request` is fenced.** Only an adapter plugin's, only to an origin
-  its manifest and its vetted entry both list; the credential is the
+  its manifest and its vetted entry both list, only on a route of the port
+  call in flight, the credential only to an origin marked for it; the credential is the
   host's and never enters the engine; each call has the host-call deadline,
   and a run has a request budget, a page limit, and caps on body size and
   time; every request is recorded (origin, method, path, status, size,
