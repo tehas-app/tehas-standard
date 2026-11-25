@@ -1,7 +1,7 @@
 # Coding standard v3
 
 Part of tehas-standard v3. A repository follows it when its
-`.tehas/coding-standard` says `v3` (see [v3/repository.md](repository.md)).
+`.tehas/standard` says `v3` (see [v3/repository.md](repository.md)).
 
 v3 is v2 plus four rules for code that runs in a browser or in a plugin
 (R11 to R14), with the plugin rules written for the plugin standard of
@@ -313,7 +313,7 @@ or compares `src/` with `dist/`, so the plugin's own CI keeps them in step
 | The repository's CI | the `architecture`, `types` and, for plugins, `plugin` jobs |
 | The host, at vetting | the plugin standard's `dist/` rules (§7 there): it refuses unsafe code, never code for its style |
 | The vetted list | a plugin of ours is listed `vetted` only at `v3` with its architecture test green at the vetted commit |
-| The starter | a template repository at `v3`: `.tehas/coding-standard`, `architecture.toml`, the script at this tag's hash, one view island on the kit, a pure model with a test, the `types` and `plugin` jobs, `src/` and a built `dist/` |
+| The starter | a template repository at `v3`: `.tehas/standard`, `architecture.toml`, the script at this tag's hash, one view island on the kit, a pure model with a test, the `types` and `plugin` jobs, `src/` and a built `dist/` |
 | Review | the review questions of [v3/repository.md](repository.md) §5, R11 to R14 included |
 
 ## 6. Isolation is the frame, not the component
@@ -333,4 +333,4 @@ it does not ship a component into that page.
 | No type rule | R12: one pinned strict checker per language, with a ratchet |
 | R3 for Rust only, in practice | R13: R3 for JavaScript models and plugin drivers |
 | No plugin rule | R14 and the plugin standard (`"plugin": 2`) |
-| `.tehas/coding-standard`: `v1` or `v2` | adds `v3`, and minors as `v3.1` ([v3/repository.md](repository.md) §1) |
+| `.tehas/coding-standard`: `v1` or `v2` | `.tehas/standard`: adds `v3`, and minors as `v3.1` ([v3/repository.md](repository.md) §1) |

@@ -30,7 +30,8 @@
   isolation; each rule names the patterns it rests on.
 - Each version is a directory of its own, complete, never edited once
   tagged; a minor is a full copy (`v3.1/`).
-- `.tehas/coding-standard` accepts minors (`v3.1`), from the v3 script on.
+- The pointer file is `.tehas/standard`, renamed from
+  `.tehas/coding-standard` in the move to v3; it accepts minors (`v3.1`).
 
 ## v2 (draft)
 
