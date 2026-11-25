@@ -5,7 +5,9 @@ so on. A tag holds the coding standard of that version and the
 architecture, contract and plugin standards, the patterns they rest on
 and the repository conventions valid with it. The standards are not versioned apart.
 
-The numbers are not semantic versions:
+The numbers are not semantic versions. (A part's own releases are: its
+external API follows Semantic Versioning, and it records its surface for
+each minor release, [v3/contracts.md](v3/contracts.md) C3.)
 
 - **A major** (`v3`) is a larger move: a new standard (v3's plugin
   standard), a new kind of check, a rework that touches much of a

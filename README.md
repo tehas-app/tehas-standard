@@ -4,10 +4,8 @@ The standards of the tehas system, current and past: how code is built in
 any repository of the system, how the parts meet, and how a plugin is
 written and run.
 
-> **Draft.** This is the planned content of the public repository
-> tehas-app/tehas-standard, drafted on 2026-11-25. The
-> repository is not created, nothing is tagged and no licence is chosen:
-> each waits for the owner.
+> **Draft.** Published 2026-11-25. No repository follows it yet and
+> nothing is tagged.
 
 ## The one pointer
 
@@ -70,6 +68,11 @@ CHANGELOG.md        what each tag changed
 v2/                 tehas-standard v2: coding, architecture, contracts, patterns
 v3/                 tehas-standard v3: coding, architecture, contracts, plugins,
                     repository conventions, patterns, the architecture script's spec
+scripts/check.py    the repository's own check: links, and tagged directories unchanged
+AGENTS.md           the rules for changing this repository
+LICENSE             CC-BY-4.0, for the text
+LICENSES/           Apache-2.0, for the scripts
+NOTICE              the copyright and which licence covers what
 ```
 
 ## What is not here
@@ -84,3 +87,10 @@ v3/                 tehas-standard v3: coding, architecture, contracts, plugins,
   meets.
 - **Style.** Naming, formatting and comments stay each repository's own,
   in its `AGENTS.md`.
+
+## Licence
+
+The standards' text is licensed under
+[CC-BY-4.0](LICENSE): adopt it, adapt it, with attribution. The scripts are
+licensed under [Apache-2.0](LICENSES/Apache-2.0.txt). [NOTICE](NOTICE) says
+which covers what.

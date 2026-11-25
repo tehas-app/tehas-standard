@@ -1,0 +1,8 @@
+tehas-standard
+Copyright 2026 Jani Tarvainen
+
+The standards' text (every Markdown file) is licensed under the Creative
+Commons Attribution 4.0 International License, in LICENSE.
+
+The scripts (scripts/, and the architecture script when it is added) are
+licensed under the Apache License, Version 2.0, in LICENSES/Apache-2.0.txt.

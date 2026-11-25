@@ -28,6 +28,7 @@ requirement.
 ## Normative references
 
 - BCP 14: [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119) and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174), the key words.
+- [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html), for the releases of a part's external API (not for tehas-standard's own versions).
 - [JSON Schema 2020-12](https://json-schema.org/draft/2020-12) (Core and Validation), for every object schema.
 - [OpenAPI 3.1](https://spec.openapis.org/oas/v3.1.1), for every external HTTP route.
 - [AsyncAPI 3.0](https://www.asyncapi.com/docs/reference/specification/v3.0.0), for every external event API.
@@ -63,17 +64,39 @@ written beside it. The formats:
 | a plugin host API | a WIT world |
 | a command line | the command list (`api/commands.txt`) and the contract's exit statuses |
 
-**C3. One surface list.** The owner keeps the list of its public names in
-one generated file, `api/surface-<version>.txt`: one name per line,
-its kind first, sorted. Its gate fails when a listed name disappears from
-the code, when the file is not what the generator writes, or when a
-retired name comes back (a retired-names list kept beside it). A name not on the list is
-internal or building, and may change in any release. Command lists
-(`api/commands.txt`) and event lists (`api/events.txt`) are kept the same
-way.
+**C3. One surface list for each minor release, kept.** The owner records
+its public names for each minor release of the part in a generated file of
+its own, `api/surface-<major>.<minor>.txt` (`api/surface-2.1.txt`): one
+name per line, its kind first, sorted. Every kind of public name is in it:
+commands, flags, exit statuses, settings and values, routes, fields, labels,
+event names, host functions. A name not on the list is internal or
+building, and may change in any release.
 
-**C4. Within a major, only additions.** Within a major release a public
-name is only added, never renamed, removed or given a new meaning: a
+- **Kept, never edited.** The file of a released minor never changes. The
+  next minor starts a new file from it; older files stay beside it, so the
+  surface of every release can be read without git.
+- **The part's own versions are semantic.** A part's external API follows
+  Semantic Versioning 2.0.0, unlike tehas-standard's own numbers: a patch
+  adds no public name, a minor only adds, only a major may remove. So the
+  delta between two minors of one major is additions only, and the
+  release notes' "Added in <minor>" list is that delta.
+- **The gate** fails when:
+  - the current minor's file is not what the generator writes from the
+    code;
+  - a name of the previous minor's file of the same major is missing from
+    the current one;
+  - a patch release changes the current minor's file;
+  - a name left out of a new major's first file is not in the retired-names
+    list and in "Changed in <major>";
+  - a retired name comes back.
+
+Command lists (`api/commands.txt`) and event lists (`api/events.txt`), where
+a part keeps them apart, follow the same rule. The OpenAPI and AsyncAPI
+documents (C2) carry the part's version in `info.version`.
+
+**C4. Within a major, only additions.** A part numbers its releases by
+Semantic Versioning 2.0.0. Within a major release a public name is only
+added, never renamed, removed or given a new meaning: a
 command, flag, exit status, setting, value, route, field, label, event
 name or host function. A change waits for the next major, by expand then
 contract (R9). A major lists what it changed once, in the contract's
@@ -154,7 +177,8 @@ Before a new external API ships, its owner has:
 1. the document (C1), its readers named;
 2. the schemas and samples, tested against the writer, and its route or
    event entries in `api/openapi.yaml` or `api/asyncapi.yaml` (C2);
-3. the names on the surface list, or marked building (C3, C6);
+3. the names on the current minor's surface list, or marked building
+   (C3, C6);
 4. the exit statuses or failure answers, failing closed (C7);
 5. its row in the table above, through a minor version of this standard;
 6. an end-to-end check with one reader (C9).
@@ -176,6 +200,9 @@ is tagged into tehas-standard only when it has:
 
 *Informative.*
 
+- **Earlier surface lists.** Parts that renamed their list at a major
+  (`surface-1.0.txt` became `surface-2.0.txt`) recover the earlier files
+  from their release tags when they move to v3, as far as the tags allow.
 - **The two description documents are new.** No part has an
   `api/openapi.yaml` or `api/asyncapi.yaml` yet (2026-11-25). Each part writes them when it moves to v3, from the schemas it already
   has.
