@@ -2,9 +2,19 @@
 
 ## v3 (draft)
 
+- Plugin standard, from the host spec's revision 7: a view's network goes
+  over its port to the host element and the request gate, the frame
+  `connect-src 'none'` always (no proxy, no load token); blessed plugins,
+  trusted like the host's code, changed only at a release or an admin's
+  pin, the only home of adapters; the upstream authenticated by mutual
+  TLS alone, trusted by a pinned key set, never for calls that act as a
+  person; `parent` reach is not authority (each route names its grant, the
+  lesser of person and plugin, no view writes by request); destination
+  patterns optional before `net:`; audit jobs without identity, secrets
+  or network, apart from the one signing job.
 - Plugin network (plugin standard §2, §5, §6, §14): `net:` for either side,
-  always through the host; a view's requests only to the host's proxy
-  under a per-load token, no credential save a read-only one for reads;
+  always through the host; a view's requests over its port to the host,
+  no credential save a read-only one for reads;
   one destination list and one request gate for both sides; the manifest
   only asks; `methods` and a body policy per origin; the reserved origin
   `parent`; SNI and certificate on the approved name, no inherited proxy
