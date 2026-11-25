@@ -44,11 +44,12 @@ skips every check when the value found is not `ENFORCED`. A repository at
    R11 to R14's checks read `src/`. `dist/` is left to the host's checks and
    the `plugin` job.
 5. **Reads `.tehas/repository.toml`**, its `[standard]` table only: an
-   unknown key there is refused, other tables are left alone. The old
+   unknown key there is refused, other tables are left alone, and a file
+   with no `[standard]` table is refused. The old
    one-line `.tehas/coding-standard` is read only where it says `v1`. Both at
    once is refused. Replacing the old file with the new one is not a
    deletion.
-6. **Refuses a downgrade.** With `--base`, a `[standard] version` lower than the base's fails, naming both. Removing the file or the table counts as writing `v1`.
+6. **Refuses a downgrade.** With `--base`, a `[standard] version` lower than the base's fails, naming both. Removing the file counts as writing `v1`.
 7. **Keeps v2's rules for the test itself:** ratchets that fail above and
    below their `max`; with `--base`, a raised `max`, a removed check or a
    changed scope needs a new `why`.
