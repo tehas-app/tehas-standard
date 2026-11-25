@@ -187,13 +187,16 @@ skills/             skill files
 - One JSON file, `tehas-plugin.json`, under a closed schema the host
   publishes in its `api/`: an unknown field is refused. A size cap holds.
 - `"plugin": 2`. A host refuses a number it does not know.
+- The exact keys are the host's schema's; this list is what every host's
+  manifest names.
 - It names: the plugin's `name`, `label`, `kind` (`adapter` for an adapter
   plugin, §2a; other kinds are the host's) and `license`; the
   `runtime` (`"starlingmonkey"`, the engine, the only value for an
   ordinary plugin with this version; `"component"` for an adapter plugin
-  built as one component, §8); the `timeout` of a run; what it `asks`; its view; each
-  WebAssembly module by name, with an optional source path and build
-  recipe; each vendor library with its version, upstream and per-file
+  built as one component, §8); the `timeout` of a run; what it `asks`; its views; the named `actions` a
+  view may press, each with a JSON Schema for its arguments; each
+  WebAssembly module by name, the driver's apart from the view's, with an
+  optional source path and build recipe; each vendor library with its version, upstream and per-file
   hashes; for an adapter plugin, the `origins` it may reach, each with
   whether the credential may go to it; the `solid-js` version its compiled view expects; its schedules
   (`every:`, `clock:`); its hook points.
@@ -270,8 +273,11 @@ skills/             skill files
   the host's `gate-answer` schema (`{"api": 1, "answer": "allow" |
   "refuse", "why"}`). A return that doesn't fit is no answer, so the gate
   holds.
-- **Language.** ES2023 modules. Async through promises; no timers beyond
-  `await`. A plugin that needs to wait asks for `every:` or `clock:`
+- **Language.** ES2023 modules; no timers beyond `await`. Whether `run`
+  may return a promise is the host's to say in its spec, by its engine: a
+  host that cannot settle one refuses a run that returns a promise, with a
+  named error, and never takes a half-run result. A plugin meant for every
+  host returns its result directly. A plugin that needs to wait asks for `every:` or `clock:`
   (`clock:mon-fri@06:00`).
 - New host functions come through a plugin surface request and are added
   only (contracts C4).
@@ -512,6 +518,11 @@ every capability it hands out and checks it at run time.
   scripts and styles by hash and `connect-src 'none'`. Its one channel is
   `postMessage` with the host element, which sends the granted data and
   checks every press and result against the plugin's grants before acting.
+  Every message is typed and versioned and checked against the host's
+  schema in its `api/`; one that fails is dropped. A press names one of
+  the manifest's `actions`, carries a single-use nonce and arguments under
+  that action's schema, and its answer goes only to the frame load that
+  pressed, never into the output other viewers see.
 - **Devices take two keys.** Every device and powerful feature is denied by
   `Permissions-Policy`, unless the manifest asks `device:<feature>` and an
   admin grants it; then the host element delegates exactly that feature,

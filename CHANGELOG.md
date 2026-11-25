@@ -2,6 +2,11 @@
 
 ## v3 (draft)
 
+- Plugin standard: the manifest names its `actions` (press arguments under a
+  schema); the view channel's messages are typed, versioned and checked,
+  a press carries a single-use nonce and its answer goes only to the
+  pressing frame; whether a driver may return a promise is the host's to
+  say, and one that cannot settle it refuses it by name.
 - The v3 script accepts a check's `rule` as any rule of the version found
   (`R1` to `R14` at `v3`), and refuses one the version lacks.
 - Adapter routes cover GraphQL as persisted operations (name and document
