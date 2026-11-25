@@ -123,6 +123,15 @@ Rules for each seam:
 - **The factory knows no industry.** The factory's APIs never name the
   industry. The industry reaches a factory only through the factory API,
   its settings, its events and the host bridge.
+- **Event subjects are owned.** An event name is
+  `<subject>.<what-happened>`. The factory's subjects are its own
+  (`cycle`, `question`, `ticket`, `change`, `factory`). The subject
+  `plugin-<name>` belongs to the plugin `<name>`, and `annex-<name>` to
+  the annex `<name>`. A factory or an industry MUST NOT raise an event
+  whose subject starts `plugin-` or `annex-`, and its event list MUST NOT
+  hold one. A plugin or annex MUST raise its own events only under its own
+  subject, never under a factory's or another's. Checked by a test of the
+  factory's event list.
 - **An annex reaches factories only through the industry** and the
   factory API.
 - **A third party writes against these documents alone.** A program outside the tehas system needs nothing internal to use an

@@ -286,6 +286,12 @@ plugin that fails:
   gate listener's answer (tehas's events spec), and no answer holds. A host's own spec says from which of its releases it raises gates.
 - **Each event's object** is under the host's `event-<name>` schema; a
   reader skips an event or field it does not know.
+- **A plugin's own events** take the subject `plugin-<name>`, its own
+  manifest name; an annex's take `annex-<name>`
+  ([contracts.md](contracts.md) §2). A host MUST NOT raise an event under
+  either. On a page they are `plugin-<name>:<event>`, never `tehas:`. How a
+  plugin declares its events and their schemas, and how a host carries
+  them to other plugins and pages, is not yet specified (see Open).
 
 ## 11. Trust
 
@@ -404,6 +410,10 @@ every capability it hands out and checks it at run time.
 
 ## Open for the owner
 
+- **Plugin events carried by the host.** A manifest field declaring a
+  plugin's events and schemas, the host checking and carrying them,
+  `hook:after:<event>` on another plugin's event, pages and limits. The
+  subjects are reserved now (§10); the mechanism is a later minor.
 - Whether `kind` is one shared list in this standard or each host's own,
   so whether one plugin can serve two hosts with one manifest name.
 - Whether "signed in, always" (guarantee 7) stays a guarantee of the
