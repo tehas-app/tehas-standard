@@ -45,15 +45,19 @@ requirement.
 | a module | An ES module (a file of `dist/`) or a WebAssembly module (`dist/wasm/<name>.wasm`). Never a name for a plugin |
 | our own plugins | Plugins on the host's signed vetted list, annexes' plugins included |
 | a third-party plugin | Any other plugin |
-| an adapter | Not a plugin kind: the one implementation of a port for one outside system (coding standard R2). An adapter may be delivered as a plugin, and then it meets this standard too |
+| an adapter | The one implementation of a port for one outside system (coding standard R2). Delivered as a plugin, it is an adapter plugin (§2a) |
+| an adapter plugin | A plugin of `kind: "adapter"`: an adapter the core calls on its own path, under §2a |
+| an ordinary plugin | Any plugin that is not an adapter plugin |
 
 ## 2. The guarantees
 
-A host gives every plugin, and every person on the host, these:
+A host gives every ordinary plugin, and every person on the host, these.
+An adapter plugin keeps them except where §2a says otherwise.
 
 1. **Off unless asked.** With plugins off, nothing is fetched, vetted or
    run, and nothing of plugins shows.
-2. **Pinned and vetted.** A plugin is a git URL and a full commit. The host
+2. **Pinned and vetted.** A plugin is a git URL and a full commit, on its
+   own schedule: a plugin is on no host release. The host
    runs exactly the `dist/` bytes that were approved, by their hash. A new
    commit runs only once it is approved; the last approved commit keeps
    running meanwhile.
@@ -90,6 +94,38 @@ Guarantees 1 to 8, 12 and 13 carry tehas's 1.x plugin guarantees into
 this version, as plugin spec 2.0.0 reshapes them. 9 is tehas's hard rule 5, which plugin spec 2.0.0 keeps. 10
 and 11 are plugin spec 2.0.0's (its decisions 30 and 32).
 
+## 2a. Adapter plugins
+
+An adapter plugin is how the core reaches an outside system (a code host,
+say) when that adapter ships as a plugin and not inside the host. It is
+the core's own code, delivered apart.
+
+- **Our own only.** An adapter plugin is on the host's signed vetted list.
+  A host refuses a third-party plugin of `kind: "adapter"`.
+- **Called, never acting.** It runs on the host's path only when the core
+  calls it through the port, and does only what that call asks. It has no
+  schedule, hook, view, tool or gate of its own, and never decides to
+  write.
+- **Not under the plugins switch.** Turning plugins off (guarantee 1)
+  leaves adapter plugins running, so the host still reaches its outside
+  systems. Guarantee 1 binds ordinary plugins.
+- **Inside the work, as the core's hands.** Guarantee 5 binds ordinary
+  plugins: an adapter plugin runs inside a cycle when the core calls it.
+  Guarantee 8 binds ordinary plugins: an adapter plugin carries out the
+  core's writes to its outside system, and only those.
+- **Approval stays a person's** (guarantee 9) holds for adapter plugins
+  too. A merge is the core's rule, behind a person's gate, and no plugin,
+  adapter or not, has a merge grant.
+- **Its one way out** is `http.request` (§6), to the origins its manifest
+  and its vetted entry both list. The host holds the credential; it never
+  enters the engine.
+- **Refused or unreachable is the port's failure.** Guarantee 4 binds
+  ordinary plugins: an adapter plugin that is refused or down fails the
+  core's call as an adapter does (coding standard R6), never skipped in
+  silence.
+- Pinned and vetted (2), fail closed (3), contained (11) and the
+  hardening of §14 hold in full.
+
 ## 3. Layout, and who builds
 
 ```
@@ -121,12 +157,13 @@ skills/             skill files
 - One JSON file, `tehas-plugin.json`, under a closed schema the host
   publishes in its `api/`: an unknown field is refused. A size cap holds.
 - `"plugin": 2`. A host refuses a number it does not know.
-- It names: the plugin's `name`, `label`, `kind` and `license`; the
+- It names: the plugin's `name`, `label`, `kind` (`adapter` for an adapter
+  plugin, §2a; other kinds are the host's) and `license`; the
   `runtime` (reserved; `"starlingmonkey"` is the only value with this
   version); the `timeout` of a run; what it `asks`; its view; each
   WebAssembly module by name, with an optional source path and build
   recipe; each vendor library with its version, upstream and per-file
-  hashes; the `solid-js` version its compiled view expects; its schedules
+  hashes; for an adapter plugin, the `origins` it may reach; the `solid-js` version its compiled view expects; its schedules
   (`every:`, `clock:`); its hook points.
 - An endpoint plugin (a model provider) is a manifest only: id, API shape
   (`openai-completions` or `anthropic-messages`) and models. Its address
@@ -144,7 +181,8 @@ skills/             skill files
   private `/state`); `model:<tokens>` (a token budget per run), with
   `model:images`; `view`, `menu`, `action:<id>`; `every:<interval>` and
   `clock:<when>`; `hook:<when>:<event>`; `tool:<id>`; `record`;
-  `issue:draft`. A host may add its own; it lists them in its spec.
+  `issue:draft`; `http`, for an adapter plugin only (§2a), refused to any
+  other. A host may add its own; it lists them in its spec.
 - **Grants an admin gives by hand.** Turning a plugin on never gives a grant
   that holds or acts on a person's path:
   - `hook:before:<event>=<policy>` (a gate; a gate grant with no policy is
@@ -178,11 +216,18 @@ skills/             skill files
   | `model.chat(req)` | `model:<tokens>` (images: `model:images`) |
   | `run.module(path, argv, env)` | always |
   | `wasm.load(name)` | a module the manifest lists |
+  | `http.request(req)` | `http`: an adapter plugin only, to an origin its manifest and its vetted entry both list |
   | `log(...)` | always |
 
   The engine's own web APIs (`crypto.subtle.digest`,
-  `crypto.getRandomValues`, `TextEncoder`, `URL`) need no grant. There is
-  no network, socket, environment or host file access.
+  `crypto.getRandomValues`, `TextEncoder`, `URL`) need no grant. Apart
+  from an adapter plugin's `http.request`, there is no network, socket,
+  environment or host file access.
+- **`http.request`** is the host's call, not the plugin's: the host adds
+  the credential, which the plugin never sees, sends the request to an
+  allowed origin (or through the host's configured upstream), and returns
+  the status, the headers it allows and the body. A redirect off the
+  allowed origins is refused.
 - **Paths** keep the mount names (`/work`, `/out`, `/state`, `/product`,
   ...). No links, no `..`; a path outside a granted root is refused.
 - **`run(ctx)`** is the entry; `ctx` carries the run's context, under the
@@ -204,7 +249,7 @@ plugin that fails:
 
 - **Parse.** JS is ES modules the engine parses.
 - **Imports.** A driver imports only its own `dist/` files and the host
-  API. A view imports only its own `dist/view/` files, the host's kit and
+  API (`tehas`), never a `node:` module or a package. A view imports only its own `dist/view/` files, the host's kit and
   its verified vendor libraries. No outside URLs, no source maps.
 - **Readable.** In the plugin's own code: no line over 1,000 characters, no
   packed or mangled code, no `eval` or `new Function`.
@@ -257,8 +302,10 @@ plugin that fails:
   (`<tehas-plugin-view>`) frames the view and owns its size, its loading,
   failed and off states, the theme tokens (through a narrow `postMessage`
   contract) and its removal.
-- **Inside its origin,** a view's entry defines exactly one custom element,
-  drawn with Solid 2 from the host's kit, in the light DOM.
+- **Inside its origin,** a view is static HTML, or its entry defines
+  exactly one custom element, drawn with Solid 2 from the host's kit, in
+  the light DOM. The element may be written as HTML and JS on the kit or
+  as JSX.
 - **JSX** is allowed in `src/`; the builder compiles it with Solid 2's
   compiler, DOM mode, ESM. Compiled output imports only names the kit
   exports; the host maps them to the kit's Solid and checks every such
@@ -343,13 +390,17 @@ tehas-standard version it meets:
 - [ ] `dist/` passes the host's checks (`tehas plugin check`) in its CI.
 - [ ] Every host function it calls is covered by its asks; it asks for no
       more than it uses.
-- [ ] Its views are one custom element on the kit; its vendor libraries
-      are verified.
+- [ ] Its views are static HTML or one custom element on the kit; its
+      vendor libraries are verified.
 - [ ] Its WebAssembly modules keep their name sections (a vendored one: its
       upstream hash) and, for our own, rebuild to the same bytes.
 - [ ] Its tests run in the engine with fake host functions.
 - [ ] It reaches models only through `model.chat`.
-- [ ] Our own: `tehas.toml` at `"v3"`, architecture test green.
+- [ ] Our own: `tehas.toml` at the root, at `"v3"`, architecture test
+      green. Until v3 is tagged, `"v2"` is the bridge. A third-party
+      plugin SHOULD keep the same file.
+- [ ] An adapter plugin: on the vetted list, `kind: "adapter"`, asks
+      `http` and nothing a view, schedule, hook, tool or gate needs.
 
 ## 14. Hardening
 
@@ -383,6 +434,12 @@ every capability it hands out and checks it at run time.
   major.
 - **No secrets out.** What a run returns is scanned for secret patterns and
   redacted before it is published.
+- **`http.request` is fenced.** Only an adapter plugin's, only to an origin
+  its manifest and its vetted entry both list; the credential is the
+  host's and never enters the engine; each call has the host-call deadline,
+  and a run has a request budget, a page limit, and caps on body size and
+  time; every request is recorded (origin, method, path, status, size,
+  time), never its credential.
 
 **In the browser (the view):**
 
@@ -416,6 +473,7 @@ every capability it hands out and checks it at run time.
   subjects are reserved now (§10); the mechanism is a later minor.
 - Whether `kind` is one shared list in this standard or each host's own,
   so whether one plugin can serve two hosts with one manifest name.
+  `adapter` is the standard's (§2a); the other kinds are still open.
 - Whether "signed in, always" (guarantee 7) stays a guarantee of the
   standard. It is drafted as one, the session's recommendation.
 - **The WASI version.** The engine imports WASI 0.2 interfaces (random,

@@ -66,7 +66,7 @@ reads.
 | deep, shallow | Deep: the interface is small against what it hides. Shallow: the interface is nearly as large as the body |
 | a seam | Where two modules or two programs meet |
 | a port | An interface named in our terms for what a program needs from outside |
-| an adapter | The one implementation of a port for one outside system. It alone knows that system's shapes. Not a plugin, though an adapter may be delivered as one |
+| an adapter | The one implementation of a port for one outside system. It alone knows that system's shapes. It may be delivered as an adapter plugin, `kind: "adapter"` ([v3/plugins.md](plugins.md) §2a) |
 | a fake | An implementation of a port for tests, written against the port, never against the outside system's wire |
 | the core | The pure decisions: no network, clock or files |
 | the shell | The code that reads, calls the core, and writes |
@@ -260,8 +260,8 @@ MUST. R3 holds for JavaScript too.
   reads no DOM, Solid, network, clock or storage.
 - A plugin's driver keeps its decisions in pure modules and its effects
   at the edge: the calls to the host API (`tehas.fs`, `tehas.git`,
-  `tehas.model`, `tehas.wasm`), made in one shell module that `run(ctx)`
-  drives.
+  `tehas.model`, `tehas.wasm`, and `tehas.http` for an adapter plugin),
+  made in one shell module that `run(ctx)` drives.
 - Each model and each pure driver module has tests. A plugin's tests are
   built into `dist/test/` and run in the host's engine with fake host
   functions (`tehas plugin test`); a page's run with `node --test`.
@@ -281,7 +281,8 @@ does not make its own:
 - the model only through `tehas.model.chat`, never a provider's client,
   address or key;
 - files, state and code only through the host API (`fs.*`, `git.*`);
-  there is no other I/O inside the engine;
+  there is no other I/O inside the engine, except an adapter plugin's
+  `http.request` to its listed origins, the credential held by the host;
 - heavy pure compute in a WebAssembly module of its own (`wasm.load`),
   never a second engine; a hot path two plugins share is asked of the
   host as a host function;
@@ -313,7 +314,7 @@ or compares `src/` with `dist/`, so the plugin's own CI keeps them in step
 | The repository's CI | the `architecture`, `types` and, for plugins, `plugin` jobs |
 | The host, at vetting | the plugin standard's `dist/` rules (§7 there): it refuses unsafe code, never code for its style |
 | The vetted list | a plugin of ours is listed `vetted` only at `v3` with its architecture test green at the vetted commit |
-| The starter | a template repository at `v3`: `tehas.toml`, `architecture.toml`, the script at this tag's hash, one view island on the kit, a pure model with a test, the `types` and `plugin` jobs, `src/` and a built `dist/` |
+| The starter | `tehas plugin new`, which scaffolds and checks `src/` and `dist/`, from a template repository at `v3`: `tehas.toml`, `architecture.toml`, the script at this tag's hash, one view island on the kit, a pure model with a test, the `types` and `plugin` jobs, `src/` and a built `dist/` |
 | Review | the review questions of [v3/repository.md](repository.md) §5, R11 to R14 included |
 
 ## 6. Isolation is the frame, not the component

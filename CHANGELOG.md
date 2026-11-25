@@ -2,6 +2,14 @@
 
 ## v3 (draft)
 
+- Adapter plugins (plugin standard §2a): `kind: "adapter"`, our own only,
+  called by the core and never acting on their own, outside the plugins
+  switch, carrying out the core's writes; their one way out is
+  `http.request` to listed origins, the credential held by the host
+  (§6, §14; coding standard R14). A plugin is on no host release. Views
+  may be static HTML; a driver imports no `node:` module; the starter is
+  `tehas plugin new`; our own plugin repositories keep `tehas.toml` at
+  the root.
 - Event subjects are owned: `plugin-<name>` and `annex-<name>` belong to
   the plugin and the annex, and no host raises under them (contracts §2,
   plugin standard §10). Carrying plugin events is open.
