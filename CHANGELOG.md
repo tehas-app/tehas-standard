@@ -2,6 +2,10 @@
 
 ## v3 (draft)
 
+- Destinations (plugin standard §6): manifest origins are exact and signed;
+  the host's configuration may use a leftmost `*.` label only, narrows an
+  adapter, may widen other networked code as a recorded choice, and never
+  adds a credential.
 - The view frame (plugin standard §14): known by a `MessageChannel` port the
   host transfers per load, never by origin; the host issues every press
   nonce; caps on message size, rate and
