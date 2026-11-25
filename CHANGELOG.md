@@ -2,6 +2,10 @@
 
 ## v3 (draft)
 
+- Adapter routes cover GraphQL as persisted operations (name and document
+  hash, mutations only in write methods, the target filled in by the
+  host); plugin code runs as its own operating system user, apart from
+  the core (plugin standard §2a, §14).
 - Adapter plugins: the vetted entry carries a route table (methods, path
   templates and credential kind per port method), each origin says whether
   the credential may go to it, and a host release may ship a default

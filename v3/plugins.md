@@ -122,9 +122,19 @@ the core's own code, delivered apart.
   (`credential: true` or `false`); the host never sends it to one that
   says `false`, nor on a redirect to one.
 - **Its routes are vetted.** An adapter plugin's vetted entry carries a
-  route table: for each port method, the HTTP methods, the path templates
-  and the credential kind allowed. The host refuses a request that is not
-  in the routes of the port call in flight.
+  route table: for each port method, its routes and the credential kind
+  allowed. A route is an HTTP method and a path template, or a persisted
+  GraphQL operation: its name and the sha256 of its exact document. The
+  host refuses a request that is not in the routes of the port call in
+  flight.
+  - For GraphQL the adapter sends an operation's name and its variables,
+    never a document; the host sends the vetted document. A mutation is
+    only in a write method's routes.
+  - The target the port call names (a repository, say) is filled in by the
+    host, never by the adapter.
+  - The credential the host attaches SHOULD be narrowed to what the port
+    call needs, where the outside system allows it (its permissions and
+    the one target).
 - **A release may ship a default entry.** Guarantee 2's "on no host
   release" binds ordinary plugins. A host release may ship a default
   vetted-list entry for our own adapter plugin, so a host that has chosen
@@ -453,6 +463,12 @@ every capability it hands out and checks it at run time.
 
 **On the host (the operator):**
 
+- **Plugin code runs apart from the core.** The trust boundary is plugin
+  code against the core. The processes that run plugins (tehas: the
+  operator, and the adapter host for adapters) each run as an operating
+  system user of their own, never the core's user, and reach the core
+  only through its sockets.
+
 - **A narrow repository view.** An input grant gives a prepared view, never
   the clone: tracked files at the commit only; `.env` and `.env.*`, private
   keys, credential and token files and `.git/` left out by default (a
@@ -479,7 +495,9 @@ every capability it hands out and checks it at run time.
   redacted before it is published.
 - **`http.request` is fenced.** Only an adapter plugin's, only to an origin
   its manifest and its vetted entry both list, only on a route of the port
-  call in flight, the credential only to an origin marked for it; the credential is the
+  call in flight (a GraphQL request only as a persisted operation, by
+  name and document hash), the credential only to an origin marked for
+  it; the credential is the
   host's and never enters the engine; each call has the host-call deadline,
   and a run has a request budget, a page limit, and caps on body size and
   time; every request is recorded (origin, method, path, status, size,
