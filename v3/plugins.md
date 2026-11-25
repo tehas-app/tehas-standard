@@ -76,8 +76,8 @@ An adapter plugin keeps them except where §2a says otherwise.
 8. **Writes only through the host.** A plugin never writes to the product,
    the code host or the host's store; the host writes what a run returns.
    The one exception planned is `issue:advisory` (§5), an admin's
-   grant, queued for the host spec's revision 5 and waiting for the
-   owner's OK.
+   grant, waiting for the owner's OK, which is decided in guard's pull
+   request.
 9. **Approval stays a person's.** A plugin never approves or merges the
    host's work and never removes a person's approval; there is no merge
    grant.
@@ -185,7 +185,7 @@ skills/             skill files
   not know.
 - The common names: input grants (`product`, `history`, `files`,
   `cycles`, `issues`, `pages`, `live:<feed>`, `feed:<feed>`,
-  `industry:logs`; `feed:advisories` is queued for revision 5); `keep` (a
+  `industry:logs`; `feed:advisories`, which comes with guard's pull request); `keep` (a
   private `/state`); `model:<tokens>` (a token budget per run), with
   `model:images`; `view`, `menu`, `action:<id>`; `every:<interval>` and
   `clock:<when>`; `hook:<when>:<event>`; `tool:<id>`; `record`;
@@ -197,7 +197,8 @@ skills/             skill files
     refused);
   - `phase:<id>` (policy `pass` or `hold`);
   - `answer:<kind>` (one plugin per kind; a person's answer always wins);
-  - `issue:advisory`, queued for revision 5 and waiting for the owner's OK
+  - `issue:advisory`, waiting for the owner's OK, decided in guard's pull
+    request
     (files one issue with public facts only: package,
     advisory id and link, installed and fixed versions; one open issue per
     package and advisory, a daily cap).
