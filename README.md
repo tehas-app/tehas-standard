@@ -10,11 +10,12 @@ written and run.
 ## The one pointer
 
 Each repository says which version of tehas-standard it follows in one
-file, its standard:
+file:
 
-```
-.tehas/standard
-v3
+```toml
+# .tehas/repository.toml
+[standard]
+version = "v3"
 ```
 
 From that line a person or an agent picking up any piece of code finds
@@ -22,8 +23,10 @@ every rule it follows: the version's `coding.md` names the architecture,
 contract and plugin standards, the patterns and the repository conventions
 valid with it.
 
-Before v2 the file was called `.tehas/coding-standard`; the old name is read
-only for `v1`.
+`.tehas/repository.toml` holds more than the standard as time goes on,
+one table per subject, each with one owner (a later `[platform]`, say, for
+the infrastructure a program needs). Before v2 the pointer was the one line
+of `.tehas/coding-standard`; that file is read only for `v1`.
 
 ## What a version holds
 

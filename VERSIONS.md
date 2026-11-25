@@ -65,7 +65,7 @@ coding, architecture, contracts, plugins, patterns and the repository
 conventions.
 
 - A part names the tehas-standard version it follows in
-  `.tehas/standard`, never in its own version number.
+  `.tehas/repository.toml`, never in its own version number.
 - A part may move to a new standard version in any of its releases, major,
   minor or patch, and is expected to: a minor of the standard is a small
   pull request, a major is planned from the diff of two directories. The
@@ -77,7 +77,7 @@ conventions.
 - A plugin host names the standard version whose plugin standard it meets;
   its plugins follow the manifest number that goes with it.
 - **Adopted versions only go up.** A part never writes a lower version in
-  `.tehas/standard` than the one it has adopted: no downgrade, not
+  `.tehas/repository.toml` than the one it has adopted: no downgrade, not
   for a release branch, not to get past a failing check. A check it can't
   meet yet is held at a ratchet with a written `why`, not escaped by going
   down.
@@ -86,7 +86,7 @@ conventions.
   new version, major or minor; every earlier directory keeps it as it was.
   On the part's side the same holds: a check leaves `architecture.toml`
   only because the standard version the part moves up to dropped it, and
-  deleting `.tehas/standard` is a downgrade, refused like one.
+  deleting `.tehas/repository.toml` is a downgrade, refused like one.
 - A new standard version never changes what an old directory says, so a
   part that stays on `v2` keeps meeting `v2`.
 

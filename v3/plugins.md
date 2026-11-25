@@ -310,7 +310,7 @@ plugin that fails:
   the vendor and module results, and a link to `src/`. Adding one is the
   admin's act and the admin's risk.
 - A coding standard rule binds our own plugins only: a plugin is listed
-  `vetted` only at `.tehas/standard` `v3` or later, with its
+  `vetted` only at `[standard] version` `"v3"` or later, with its
   architecture test green at the vetted commit.
 
 ## 12. What a host keeps in its own spec
@@ -343,7 +343,7 @@ tehas-standard version it meets:
       upstream hash) and, for our own, rebuild to the same bytes.
 - [ ] Its tests run in the engine with fake host functions.
 - [ ] It reaches models only through `model.chat`.
-- [ ] Our own: `.tehas/standard` at `v3`, architecture test green.
+- [ ] Our own: `.tehas/repository.toml` at `"v3"`, architecture test green.
 
 ## Open for the owner
 
