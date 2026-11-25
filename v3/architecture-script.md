@@ -43,12 +43,12 @@ skips every check when the value found is not `ENFORCED`. A repository at
 4. **Knows a plugin's layout.** In a repository with `tehas-plugin.json`,
    R11 to R14's checks read `src/`. `dist/` is left to the host's checks and
    the `plugin` job.
-5. **Reads `.tehas/standard`**, and the old name `.tehas/coding-standard`
-   only where it says `v1`. Both at once is refused. A rename from the old
-   name to the new one is not a deletion.
-6. **Refuses a downgrade.** With `--base`, a `.tehas/standard` value
-   lower than the base's fails, naming both. Removing the file counts as
-   writing `v1`.
+5. **Reads `.tehas/repository.toml`**, its `[standard]` table only: an
+   unknown key there is refused, other tables are left alone. The old
+   one-line `.tehas/coding-standard` is read only where it says `v1`. Both at
+   once is refused. Replacing the old file with the new one is not a
+   deletion.
+6. **Refuses a downgrade.** With `--base`, a `[standard] version` lower than the base's fails, naming both. Removing the file or the table counts as writing `v1`.
 7. **Keeps v2's rules for the test itself:** ratchets that fail above and
    below their `max`; with `--base`, a raised `max`, a removed check or a
    changed scope needs a new `why`.

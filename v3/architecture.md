@@ -109,4 +109,4 @@ The concrete map of one deployment of the tehas system (which part owns
 which knowledge today, which private part reads which seam) is kept by its
 owner, not here. Each program keeps the manual of its own implementation
 and names the tehas-standard version it follows in
-`.tehas/standard`.
+`.tehas/repository.toml`.

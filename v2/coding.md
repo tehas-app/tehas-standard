@@ -1,7 +1,7 @@
 # Coding standard v2
 
 Part of tehas-standard v2. A repository follows it when its
-`.tehas/standard` says `v2` (see §4). It names:
+`.tehas/repository.toml` says `[standard] version = "v2"` (see §4). It names:
 
 | With coding standard v2 | Valid version |
 | --- | --- |
@@ -158,10 +158,20 @@ rewrite.
 
 ## 4. The pointer and the files a repository keeps
 
-`.tehas/standard` holds one line (before v2 the file was called
-`.tehas/coding-standard`; the old name is read only for `v1`): `v1` (or no file) for the code as
-it is, with the architecture test skipped; `v2` for this standard, with the
-test enforced on every pull request. Any other value is refused by name.
+`.tehas/repository.toml` names the standard in its `[standard]` table:
+
+```toml
+[standard]
+version = "v2"
+```
+
+`"v1"` (or no file, or no `[standard]` table) is the code as it is, with the
+architecture test skipped; `"v2"` is this standard, with the test enforced on
+every pull request. Any other value is refused by name. The script owns the
+`[standard]` table only: an unknown key in it is refused, other tables are
+left to their owners. Before v2 the pointer was the one line of
+`.tehas/coding-standard`; it is read only for `v1`, and a repository never
+keeps both files.
 An adopted value only goes up: a repository never writes a lower version
 than it has adopted.
 A minor of v2 is a new directory, `v2.1/`; this file does not change. A repository takes it by writing `v2.1` once its script knows it:
