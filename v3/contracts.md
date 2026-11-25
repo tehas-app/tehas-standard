@@ -90,6 +90,18 @@ building, and may change in any release.
     list and in "Changed in <major>";
   - a retired name comes back.
 
+- **Tagging forces the update.** The part's release workflow runs a
+  surface step before it tags, and refuses the tag when it fails:
+  - a new minor or major (`vX.Y.0`): `api/surface-X.Y.txt` MUST exist,
+    be what the generator writes at the tagged commit, and, for a minor,
+    hold every name of the previous minor's file. The step writes the file
+    and asks for its commit when it is missing, so a new version's surface
+    is always recorded before its tag;
+  - a patch (`vX.Y.Z`, Z above 0): the generator's output MUST equal
+    `api/surface-X.Y.txt`. A patch fixes bugs and changes no surface, so
+    this step normally passes with nothing to do; a difference means the
+    release is a minor, not a patch.
+
 Command lists (`api/commands.txt`) and event lists (`api/events.txt`), where
 a part keeps them apart, follow the same rule. The OpenAPI and AsyncAPI
 documents (C2) carry the part's version in `info.version`.

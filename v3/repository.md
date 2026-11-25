@@ -180,6 +180,10 @@ may be tagged at any grade, but no band may fall below the last grade's.
 - Within a part's major, its external API only adds
   ([contracts.md](contracts.md) C4). A major lists what changed, with its
   readers.
+- Tagging runs the surface step of [contracts.md](contracts.md) C3: a new
+  minor or major is tagged only with its `api/surface-X.Y.txt` committed and
+  current; a patch only when its surface is unchanged. The step lives in the
+  release workflow, a gate file.
 
 ## 8. Commits and pull requests
 
