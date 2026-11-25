@@ -44,6 +44,7 @@ requirement.
 | a tool | A function a plugin offers to the chats (`tool:<id>`), which a model calls. Never a name for a plugin |
 | a module | An ES module (a file of `dist/`) or a WebAssembly module (`dist/wasm/<name>.wasm`). Never a name for a plugin |
 | our own plugins | Plugins on the host's signed vetted list, annexes' plugins included |
+| a blessed plugin | One of our own that the owner blesses: trusted like the host's own code, the truth of its answers included (§11) |
 | a third-party plugin | Any other plugin |
 | an adapter | The one implementation of a port for one outside system (coding standard R2). Delivered as a plugin, it is an adapter plugin (§2a) |
 | an adapter plugin | A plugin of `kind: "adapter"`: an adapter the core calls on its own path, under §2a |
@@ -72,7 +73,7 @@ An adapter plugin keeps them except where §2a says otherwise.
    functions; a call no grant covers is refused before any work is done.
 7. **Signed in, always.** Every address of a plugin is behind the host's
    sign-in. A view loads nothing from another site itself: it reaches
-   one only through the host's proxy, under `net:` (§14). (How a host
+   one only through the host, under `net:`, over its port (§14). (How a host
    signs a person in is its own.)
 8. **Writes only through the host.** A plugin never writes to the product,
    the code host or the host's store; the host writes what a run returns.
@@ -101,8 +102,8 @@ An adapter plugin is how the core reaches an outside system (a code host,
 say) when that adapter ships as a plugin and not inside the host. It is
 the core's own code, delivered apart.
 
-- **Our own only.** An adapter plugin is on the host's signed vetted list.
-  A host refuses a third-party plugin of `kind: "adapter"`.
+- **Blessed only.** An adapter plugin exists only in a blessed plugin
+  (§11). A host refuses any other plugin of `kind: "adapter"`.
 - **Called, never acting.** It runs on the host's path only when the core
   calls it through the port, and does only what that call asks. It has no
   schedule, hook, view, tool or gate of its own, and never decides to
@@ -142,8 +143,9 @@ the core's own code, delivered apart.
   vetted-list entry for our own adapter plugin, so a host that has chosen
   no adapter runs that entry. It is an entry like any other: signed, a
   full commit, the `dist/` hash, its origins and routes. It is not a pin
-  in the release's code, and a newer signed entry may replace it between
-  releases.
+  in the release's code. Being blessed, it changes only with a release's
+  default entry or an admin's pin, never because a newer signed entry
+  appears.
 - **Its own world.** An adapter plugin implements the host's adapter world
   (tehas: `tehas:adapter`), made from the host's port types: the ports as
   exports; `http.request`, `log` and the host state the ports need as
@@ -273,7 +275,8 @@ skills/             skill files
   the person (third party), and vetting signs what it grants. A person
   may set a plugin's destinations in the host's configuration, in one
   format for every kind:
-  - there, and only there, a pattern may be used: a leftmost `*.` label
+  - there, and only there, a pattern may be used (a host MAY support
+    none until it has `net:`): a leftmost `*.` label
     alone, never `*`, never a public suffix (`*.com`, `*.co.uk`), never in
     the scheme or the port;
   - for an adapter plugin, the host's configuration only narrows what
@@ -294,7 +297,11 @@ skills/             skill files
   runs in. It needs no manifest entry, a manifest may not declare it, and
   the host's configuration cannot narrow it away. It reaches only the
   routes the hosting app publishes for plugins, never with the person's
-  session cookie, and a write to it needs the person's confirm (§14).
+  session cookie. Reach is not authority: each published route names the
+  grant it needs, and a request runs at the lesser of the person's
+  standing and the plugin's grants. A view never writes to it by a
+  request; a write goes only through a persisted `action` with the
+  person's confirm (§14).
 - **`http.request`** is the host's call, not the plugin's: the host adds
   the credential, which the plugin never sees, sends the request to an
   allowed origin (or through the host's configured upstream), and returns
@@ -445,6 +452,15 @@ plugin that fails:
   list carries an increasing `serial` and an `expires` date; a host
   refuses a lower serial, and an expired or unsigned list turns
   auto-approval off. A host trusts the list only through its signature.
+- **Blessed plugins.** The owner may bless some of our own plugins, and
+  only those may hold adapters. Blessed code is trusted like the host's
+  own, the truth of its answers included. It changes only at a host
+  release (its default entry) or by an admin's pin, never by a newer
+  signed entry on its own, and its repository requires a person's review
+  of every change.
+- **The audit and the signing are apart.** The audit jobs that run
+  plugin code have no signing identity, no secrets and no network. The
+  one job that signs runs no plugin code.
 - **Provenance.** The audit pipeline's signed list and the host's engine
   release each carry SLSA v1.1 Build Level 2 provenance or better.
 - **Revocation.** A revoked commit is turned off at the next update, with
@@ -563,9 +579,12 @@ every capability it hands out and checks it at run time.
   egress process of the host, run as a user of its own, where the request
   gate runs; a host may keep one for the server side and one for views. A
   process that runs plugin code, or only relays a view's requests, never
-  connects out itself. To an upstream, the
-  host also proves itself: mutual TLS with a client certificate per host,
-  bound to that host's key.
+  connects out itself.
+- **The upstream.** The host and its upstream authenticate each other by
+  mutual TLS alone: a client certificate per host, bound to its key, and
+  the upstream trusted by its pinned key set and its name, with no public
+  CA chain needed. No key in a header stands in for it. A call that acts
+  as a person never goes through the upstream.
 - **Bodies are capped as read.** An answer's size cap counts the bytes
   after decompression, and only `gzip` or `identity` encodings are
   accepted.
@@ -576,8 +595,8 @@ every capability it hands out and checks it at run time.
   `<iframe sandbox="allow-scripts">` without `allow-same-origin`: an opaque
   origin with no cookies, no storage and no session; no popups, forms, top
   navigation, downloads or modals; a CSP of `default-src 'none'` with
-  scripts and styles by hash and `connect-src 'none'`, unless the plugin
-  has `net:` (below). Its one channel is
+  scripts and styles by hash and `connect-src 'none'`, always. Its one
+  channel is
   `postMessage` with the host element, which sends the granted data and
   checks every press and result against the plugin's grants before acting.
   Every message is typed and versioned and checked against the host's
@@ -597,13 +616,16 @@ every capability it hands out and checks it at run time.
     or uses the person's credential) needs a confirm drawn in the host
     element's own page, outside the frame, naming the action's manifest
     label. A nonce proves a message is fresh, not that a person clicked.
-- **A view's network is only through the host.** With `net:`, the view
-  makes normal HTTPS requests, but the frame's CSP lets them reach only
-  the host's proxy, under a token minted for that load, scoped to the
-  plugin, the load and its origins, short-lived and never in a cookie.
-  The kit maps a URL to an origin id (a relative one to `parent`) and an
-  unmapped URL is refused. The proxy runs the request gate; it takes no
-  `Cookie` or `Authorization` from the view and returns no `Set-Cookie`.
+- **A view's network is only through the host, over its port.** The
+  frame never connects anywhere. With `net:`, the kit carries the view's
+  requests over the load's port to the host element, which is the host's
+  own code in the host's page; it hands them to the request gate, which
+  makes them. There is no proxy address in the frame's policy, no load
+  token and no CORS answer. The kit maps a URL to an origin id (a
+  relative one to `parent`) and an unmapped URL is refused. No `Cookie`
+  or `Authorization` comes from the view, and no `Set-Cookie` goes back.
+  A host specifies a view's network in its own spec once its browser
+  checks (H8 to H10) are done; until then it gives no view `net:`.
   A view gets no credential, with one kind of exception, for our own
   signed plugins only: an origin the vetted entry marks for a view
   credential gets a read-only credential
