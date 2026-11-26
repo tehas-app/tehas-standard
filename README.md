@@ -4,8 +4,8 @@ The standards of the tehas system, current and past: how code is built in
 any repository of the system, how the parts meet, and how a plugin is
 written and run.
 
-> **Draft.** Published 2026-11-25. No repository follows it yet and
-> nothing is tagged.
+> **`v2` is tagged** (2026-11-26). The tehas system's first three parts
+> follow it and run its architecture script byte for byte. `v3` is a draft.
 
 ## The one pointer
 
