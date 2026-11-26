@@ -414,7 +414,7 @@ plugin that fails:
   compiled output expects; the host refuses one its kit does not carry.
   A builder who types `.tsx` adds `@solidjs/web` at the kit's version as a
   type-only dev dependency.
-- **Heavy view work** runs in a WebAssembly module in a module worker
+- **Heavy view work** runs in a WebAssembly module in a dedicated worker
   started from a `blob:` URL, under the frame's policy (§14), declared in
   the manifest, under §8's audit. The view's policy allows
   `'wasm-unsafe-eval'` only for a view that declares modules. A view
@@ -652,9 +652,12 @@ every capability it hands out and checks it at run time.
 - **WebAssembly in the browser is boxed third-party code.** A view module is
   pure compute: its imports are memory and a short list of glue helpers; an
   import that binds a web API is refused at vetting. It runs only in a
-  dedicated module worker that the frame starts from a `blob:` URL (an
+  dedicated worker that the frame starts from a `blob:` URL (an
   opaque-origin frame can start no other), so the worker runs under the
-  frame's own policy, `connect-src 'none'` included, with
+  frame's own policy. Classic or module is the host's choice, by what
+  the browsers start in a sandboxed frame (a `blob:` module worker fails
+  there in at least one engine today). Either way it runs under that
+  policy, `connect-src 'none'` included, with
   `'wasm-unsafe-eval'` only for a view that declares modules: no DOM, no
   network, the module's bytes and its results in and out through
   `postMessage`. A vendored codec is
