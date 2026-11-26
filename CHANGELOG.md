@@ -120,7 +120,13 @@
   tagged; a minor is a full copy (`v3.1/`).
 - `[standard] version` accepts minors (`"v3.1"`).
 
-## v2 (draft)
+## v2
+
+Tagged 2026-11-26. `tools/architecture.py` at this tag has sha256
+`485a7e639236c5236e542ff7fb2c9b9d815fcb7646745cbdb5c89f180cd0452b`. An
+`AGENTS.md` that follows v2 links to
+`https://github.com/tehas-app/tehas-standard/tree/v2/v2`.
+
 
 - The architecture script counts in every tracked file: a byte that is not
   UTF-8 no longer hides the file's matches (it was read as no text). Rust

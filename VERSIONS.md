@@ -95,7 +95,7 @@ conventions.
 | Version | Coding standard | Architecture standard | Plugin standard | Contracts | Patterns | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | `v1` | the code as it was, no definition | none | none | none | none | the default for a repository with no pointer |
-| `v2` | [v2/coding.md](v2/coding.md): R1 to R10, the architecture test, review and grading | [v2/architecture.md](v2/architecture.md): A1 to A6 | none: plugins are off in every release that follows v2 | [v2/contracts.md](v2/contracts.md): C1 to C9 | [v2/patterns.md](v2/patterns.md) | draft; the tehas system's first three parts are adopting it |
+| `v2` | [v2/coding.md](v2/coding.md): R1 to R10, the architecture test, review and grading | [v2/architecture.md](v2/architecture.md): A1 to A6 | none: plugins are off in every release that follows v2 | [v2/contracts.md](v2/contracts.md): C1 to C9 | [v2/patterns.md](v2/patterns.md) | tagged 2026-11-26; the tehas system's first three parts follow it |
 | `v3` | [v3/coding.md](v3/coding.md): v2 plus R11 to R14 | [v3/architecture.md](v3/architecture.md): A1 to A6 | [v3/plugins.md](v3/plugins.md): manifest `"plugin": 2` | [v3/contracts.md](v3/contracts.md): C1 to C9 and the catalogue | [v3/patterns.md](v3/patterns.md): v2's plus plugins and front ends | draft |
 
 **Which host meets which version.** A plugin host names the tehas-standard
