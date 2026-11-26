@@ -2,6 +2,21 @@
 
 ## v3 (draft)
 
+- The v3 architecture script (`tools/architecture.py`, `# tehas-standard
+  v3`), after `v3/architecture-script.md`: it knows `v1`, `v2`, `v3` and
+  every minor of v2 and v3 (`vN.M`, M from 1), enforces from v2 on in
+  order, and refuses a later major by name. A check's rule is one of its
+  version's (R1 to R14 at v3). From v3 it requires R11 to R14's checks
+  where they apply, reads only `src/` for those rules in a plugin
+  (`tehas-plugin.json`), checks that `AGENTS.md` names the version, and
+  checks each toolchain pin (`rust-toolchain.toml`, a `versions.env`, the
+  CI workflows, `package.json`) against `[platform]`. At v2 it gives what
+  the v2 script gave.
+- The script's reading of tracked files (issue 29): a symlink is not
+  followed, a link loop is no file, a file with a UTF-16 byte order mark
+  is read as UTF-16, and a check whose files match nothing warns at v2 and
+  fails from v3. A base whose pointer cannot be read needs a head at least
+  as high as any version that pointer spells out.
 - The manifest list (plugin standard §4) names the host spec revision a
   plugin was built against and its skill files; the licence field waits
   until a host's schema has it.
