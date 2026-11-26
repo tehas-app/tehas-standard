@@ -193,17 +193,23 @@ skills/             skill files
 - `"plugin": 2`. A host refuses a number it does not know.
 - The exact keys are the host's schema's; this list is what every host's
   manifest names.
-- It names: the plugin's `name`, `label`, `kind` (`adapter` for an adapter
-  plugin, §2a; other kinds are the host's) and `license`; the
+- It names: the plugin's `name`, `label` and `kind` (`adapter` for an
+  adapter plugin, §2a; other kinds are the host's); the revision of the
+  host's spec it was built against (`spec`), which its tags state; the
   `runtime` (`"starlingmonkey"`, the engine, the only value for an
   ordinary plugin with this version; `"component"` for an adapter plugin
-  built as one component, §8); the `timeout` of a run; what it `asks`; its views; the named `actions` a
-  view may press, each with a JSON Schema for its arguments; each
+  built as one component, §8); the `timeout` of a run; what it `asks`;
+  its views; the named `actions` a view may press, each with a JSON
+  Schema for its arguments; its skill files, under `skills/`; each
   WebAssembly module by name, the driver's apart from the view's, with an
-  optional source path and build recipe; each vendor library with its version, upstream and per-file
-  hashes; for an adapter plugin, the `origins` it may reach, each with
-  whether the credential may go to it; the `solid-js` version its compiled view expects; its schedules
+  optional source path and build recipe; each vendor library with its
+  version, upstream and per-file hashes; for an adapter plugin, the
+  `origins` it may reach, each with whether the credential may go to it;
+  the `solid-js` version its compiled view expects; its schedules
   (`every:`, `clock:`); its hook points.
+- **Not yet in the manifest:** its licence. Guarantee 13 holds (any
+  licence), but no host's schema has the field yet, so a manifest does
+  not carry it until one does.
 - An endpoint plugin (a model provider) is a manifest only: id, API shape
   (`openai-completions` or `anthropic-messages`) and models. Its address
   comes from the host's or the industry's settings, never from the

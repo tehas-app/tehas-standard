@@ -2,6 +2,9 @@
 
 ## v3 (draft)
 
+- The manifest list (plugin standard §4) names the host spec revision a
+  plugin was built against and its skill files; the licence field waits
+  until a host's schema has it.
 - With an upstream set, every call goes through it, a person's call too,
   with the person's own credential forwarded untouched; the sign-in's code
   exchange is an upstream route; the upstream enforces the vetted origins
