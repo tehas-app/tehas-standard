@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 # Copyright 2026 Jani Tarvainen
 # SPDX-License-Identifier: Apache-2.0
-"""The architecture test: the mechanical checks of tehas-standard v2.
+"""The architecture test: the mechanical checks of tehas-standard v2 and v3.
 
     scripts/architecture.py [--config FILE] [--base REF] [--summary FILE] [--root DIR] [--force]
 
-The rules are tehas-standard v2's coding standard, sections 4 and 5
-(https://github.com/tehas-app/tehas-standard, `v2/coding.md`). This script
-is one file, the same in every repository that follows v2: tehas-standard's
-`tools/architecture.py`, copied byte for byte to `scripts/architecture.py`,
-its sha256 the one in `tools/architecture.py.sha256`. What it checks is the
-repository's own `architecture.toml`.
+The rules are tehas-standard's coding standard
+(https://github.com/tehas-app/tehas-standard: `v2/coding.md` sections 4
+and 5, `v3/coding.md` sections 4 and 5, `v3/architecture-script.md`). This
+script is one file, the same in every repository that follows v2 or later:
+tehas-standard's `tools/architecture.py`, copied byte for byte to
+`scripts/architecture.py`, its sha256 the one in
+`tools/architecture.py.sha256`. What it checks is the repository's own
+`architecture.toml`. At v2 it does what the v2 script did, but for how it
+reads tracked files (below).
 
 Each `[[check]]` counts the places a regular expression matches in the
 tracked files it names, outside the files where that knowledge is allowed.
@@ -61,17 +64,69 @@ opens on a line matching `start` and closes on the first line matching
 text from the `end` match on is left out. Lines whose first characters are
 the check's `comment` prefix are skipped.
 
+A tracked file is read as it is in the work tree. A symlink is not
+followed, at the path or on the way to it: a target in the repository is
+counted where it lives, once, and one outside it is not read. A dangling
+link and a link loop are no file, like a directory. A file that begins
+with a UTF-16 byte order mark is read as UTF-16, as a browser reads it;
+any other as UTF-8, a byte that is not UTF-8 kept as it is. A file that
+is there but cannot be read stops the run. A check whose files match no
+tracked file it may count counts nothing and holds at any `max`: at v2 the
+summary warns, from v3 it fails.
+
 The repository says which standard it follows in `tehas.toml` at `--root`,
 table `[standard]`: `url`, tehas-standard's, and `version`. Before v2 the
 pointer was the one line of `.tehas/coding-standard`; it is read only for
 `v1`, and the two files are never kept at once. `v1`, or no file, is the
 code as it was before its first refactoring runs: the test says it is
-skipped and passes; `--force` runs it anyway, to see the counts. `v2` is
-enforced. A later standard (`v2.1`, `v3`) comes with the version of this
-script that enforces it, and this one refuses it by name. Any other value,
-a file with no `[standard]` table, an unknown key in it, and a symlink are
-refused. `[platform]` names the toolchains, each at a major v2 allows; the
-other tables of `tehas.toml` have other owners. Both files are read once.
+skipped and passes; `--force` runs v2's checks anyway, to see the counts.
+Any other value, a file with no `[standard]` table, an unknown key in it,
+and a symlink are refused. `[platform]` names the toolchains, each at a
+major the standard allows; the other tables of `tehas.toml` have other
+owners. Both files are read once.
+
+The versions this script knows are the majors `v1`, `v2` and `v3`, and
+every minor of v2 and v3: `vN.M`, M a whole number from 1 with no leading
+zero (`v2.1`, `v3.12`; not `v3.0`, `v3.01` or `v3.1.2`). v1 has no
+minors. They are ordered by number (`v2.9` < `v2.10` < `v3`). A later
+major (`v4`, `v4.1`) is refused by name: this script is tehas-standard v3,
+and v4 brings its own. A minor is enforced as its major, with what each
+version up to it adds (`REQUIRED`); a minor that adds a check comes with
+the script of its tag, which the `architecture` job holds by its sha256.
+The checks run at `v2` and every later version, in order:
+
+- from v2, a check's `rule` is one of its version's rules: R1 to R10 at
+  v2 and its minors, R1 to R14 at v3 and its minors. A rule the version
+  does not have is refused by name.
+- from v3, `architecture.toml` holds R11 to R14's checks where they apply
+  (`REQUIRED`), each a `[[check]]` under its rule, at any `max` with a
+  `why`: the `kit-*` checks and `vendor-unlisted` where the repository has
+  pages or views (an HTML, JavaScript or TypeScript file), `ts-strict` and
+  `ts-escape` for JavaScript and TypeScript, `rs-escape` for Rust,
+  `py-escape` for Python and `sh-escape` for shell scripts (by extension),
+  `model-pure` where there are pages, views or a plugin, and
+  `plugin-provider` in a plugin. Files under a `vendor` or `node_modules`
+  directory, and a plugin's `dist/`, say nothing of what is written here.
+- a plugin is a repository with `tehas-plugin.json` tracked at the root.
+  There R11 to R14's checks and reports count in `src/` only: `dist/` is
+  the host's to vet and the `plugin` job's to compare. Other rules read
+  the whole repository.
+- from v3, `AGENTS.md` names the same version as `[standard] version`: its
+  first "tehas-standard vN" (or "vN.M") is that version, exactly.
+- from v3, each exact pin of a toolchain (`PINS`) is within the major its
+  `[platform]` key names: `channel` in `rust-toolchain.toml` (or the TOML
+  form of `rust-toolchain`), `RUST_VERSION=` and `TSC_VERSION=` in a
+  `versions.env` at the root or one directory down, `RUST_VERSION:`,
+  `TSC_VERSION:` and `typescript@X` in `.github/workflows/`, and
+  `"typescript"` in the root `package.json`: the places repositories keep
+  their pins in. A deeper `versions.env` is a test fixture or a vendored
+  copy, and is not read. A pin of a toolchain `[platform]` does not name
+  fails. A value that is no exact version (`stable`, `^7.0`) is not
+  compared, nor is a toolchain with no pin found; the summary says so for
+  each, and neither fails, since the standard asks for the pin only where
+  the repository has always kept one.
+
+At v2 none of the v3 items is read, so a repository at v2 sees what it saw.
 
 With `--base`, the base must be a commit here, and its files are read by
 their git mode. An adopted standard only goes up: the head may not name a
@@ -79,9 +134,10 @@ lower standard than the base (by the higher of the base's two files, where
 it has both), or none where the base names one, and a `[platform]` the base
 names may not lose a toolchain. A base whose pointer is there but cannot be
 read (not TOML, not UTF-8, a value that is no standard) is not a reason to
-block its repair: the head must then name v2, the highest standard this
-script knows, so nothing can go down, and the summary says the base was
-not compared. A run without `--base` (a push) compares with nothing: the
+block its repair: the head must then name at least the highest version
+the base's pointer files spell out anywhere in their text, and at least
+v2, so nothing it could have meant can go down, and the summary says the
+base was not compared. A run without `--base` (a push) compares with nothing: the
 pull request's run guards the step, and a workflow that wants the guard on
 a push passes the push's previous commit as `--base`.
 
@@ -89,13 +145,14 @@ Exit codes: 0 every check holds or the test is skipped, 1 a check fails, 2 the c
 the repository cannot be read. Needs python3 (3.11 or later) and git. No
 network.
 """
-# tehas-standard v2
+# tehas-standard v3
 
 import argparse
+import errno
 import os
-import stat
 import posixpath
 import re
+import stat
 import subprocess
 import sys
 import tomllib
@@ -112,7 +169,7 @@ REPORT_REQUIRED = {"id", "rule", "what", "files"}
 FIXED_BY_STANDARD = {"pattern", "mode", "comment", "start", "end"}
 TOP_KEYS = {"version", "method", "review", "check", "report"}
 MODES = {"lines", "spans"}
-RULE = re.compile(r"R([1-9]|10)")
+RULE = re.compile(r"R([1-9][0-9]*)")
 SHOWN = 20
 
 # The pointer, tehas.toml: this script owns [standard] and, for now,
@@ -121,9 +178,75 @@ STANDARD_FILE = "tehas.toml"
 OLD_STANDARD_FILE = ".tehas/coding-standard"  # the pointer's name before v2; read only for v1
 STANDARD_KEYS = {"url", "version"}
 STANDARD_URL = "https://github.com/tehas-app/tehas-standard"  # the standard this script checks
-PLATFORM_ALLOWED = {"rust": {"1.x"}, "typescript": {"7.x"}}  # each toolchain's majors at v2
-STANDARDS = {"v1", "v2"}
-ENFORCED = "v2"  # also the highest STANDARDS holds
+PLATFORM_ALLOWED = {"rust": {"1.x"}, "typescript": {"7.x"}}  # each toolchain's majors at v2 and v3
+SCRIPT = "v3"  # this script's tag: the highest major it knows
+STANDARDS = ("v1", "v2", "v3")  # the majors it knows, in order
+MINORED = ("v2", "v3")  # the majors whose minors (v2.1, v3.1, ...) it knows
+RULES = {"v2": 10, "v3": 14}  # the last rule of each major: R1 to R10, R1 to R14
+ENFORCED = "v2"  # the lowest standard whose checks run; every later one runs them too
+VERSION = re.compile(r"v([1-9][0-9]*)(?:\.([1-9][0-9]*))?")
+
+# What each version adds (from its coding.md): the checks architecture.toml
+# must hold from that version on, each (id, rule, where it applies). A
+# version requires every entry of itself and of the versions below it, so a
+# minor that adds a check adds a key here ("v3.1") in its own script.
+REQUIRED = {
+    "v3": (
+        ("kit-solid-import", "R11", "web"),
+        ("kit-copy", "R11", "web"),
+        ("kit-own-fetch", "R11", "web"),
+        ("kit-raw-html", "R11", "web"),
+        ("vendor-unlisted", "R11", "web"),
+        ("ts-strict", "R12", "js"),
+        ("ts-escape", "R12", "js"),
+        ("rs-escape", "R12", "rust"),
+        ("py-escape", "R12", "python"),
+        ("sh-escape", "R12", "shell"),
+        ("model-pure", "R13", "web or plugin"),
+        ("plugin-provider", "R14", "plugin"),
+    ),
+}
+# Where a requirement applies, by the tracked files' extensions. Files under
+# a `vendor` or `node_modules` directory are third-party code, and a
+# plugin's `dist/` is built from its `src/`: neither says what is written here.
+LANGUAGES = {
+    "js": {".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx", ".mts", ".cts"},
+    "rust": {".rs"},
+    "python": {".py"},
+    "shell": {".sh", ".bash"},
+}
+PAGES = {".html", ".htm"}
+NOT_OWN = {"vendor", "node_modules"}
+APPLIES = {
+    "web": "the repository has pages or views",
+    "js": "it holds JavaScript or TypeScript",
+    "rust": "it holds Rust",
+    "python": "it holds Python",
+    "shell": "it holds shell scripts",
+    "web or plugin": "it has pages, views or a plugin's core",
+    "plugin": "it is a plugin",
+}
+PLUGIN_FILE = "tehas-plugin.json"  # a plugin's manifest, at the root
+PLUGIN_RULES = {"R11", "R12", "R13", "R14"}  # in a plugin, these read src/ only
+AGENTS_FILE = "AGENTS.md"
+AGENTS_NAMES = re.compile(r"tehas-standard (v[0-9]+(?:\.[0-9]+)?)")
+
+# Where a repository pins a toolchain exactly: (toolchain, the tracked
+# files, as globs, the regular expression whose group 1 is the version).
+# Generic conventions, none of them one repository's; a pin elsewhere is
+# not seen, and the summary says so.
+WORKFLOWS = (".github/workflows/*.yml", ".github/workflows/*.yaml")
+VERSIONS_FILES = ("versions.env", "*/versions.env")
+PINS = (
+    ("rust", ("rust-toolchain.toml", "rust-toolchain"), r"^\s*channel\s*=\s*[\"']([^\"']*)[\"']"),
+    ("rust", VERSIONS_FILES, r"^\s*(?:export\s+)?RUST_VERSION=[\"']?([^\"'\s#]*)"),
+    ("rust", WORKFLOWS, r"^\s*RUST_VERSION\s*:\s*[\"']?([^\"'\s#]*)"),
+    ("typescript", VERSIONS_FILES, r"^\s*(?:export\s+)?TSC_VERSION=[\"']?([^\"'\s#]*)"),
+    ("typescript", WORKFLOWS, r"^\s*TSC_VERSION\s*:\s*[\"']?([^\"'\s#]*)"),
+    ("typescript", WORKFLOWS, r"\btypescript@([0-9][^\s\"'`]*)"),
+    ("typescript", ("package.json",), r"^\s*\"typescript\"\s*:\s*\"([^\"]*)\""),
+)
+EXACT = re.compile(r"([0-9]+)\.[0-9]+(\.[0-9]+)?([-+][0-9A-Za-z.-]+)?")
 
 class ConfigError(Exception):
     pass
@@ -180,8 +303,10 @@ def matches_any(path, globs):
     return any(g.match(path) for g in globs)
 
 
-def parse(text, where):
-    """The configuration, every problem at once."""
+def parse(text, where, level=ENFORCED):
+    """The configuration, every problem at once. A check's rule is one of
+    the rules of `level`, the standard the checks run at."""
+    last = RULES[major(level)]
     try:
         doc = tomllib.loads(text)
     except tomllib.TOMLDecodeError as e:
@@ -210,8 +335,12 @@ def parse(text, where):
                 if cid in seen:
                     problems.append(f"{name}: the id is used twice")
                 seen.add(cid)
-            if "rule" in c and not (isinstance(c["rule"], str) and RULE.fullmatch(c["rule"])):
-                problems.append(f"{name}: rule must be one of R1 to R10")
+            if "rule" in c:
+                m = RULE.fullmatch(c["rule"]) if isinstance(c["rule"], str) else None
+                if not m:
+                    problems.append(f"{name}: rule must be one of R1 to R{last}")
+                elif int(m.group(1)) > last:
+                    problems.append(f"{name}: rule must be one of R1 to R{last}; {c['rule']} is not a rule of {level}")
             std = c.get("standard")
             if ("pattern" in c) == ("standard" in c):
                 problems.append(f"{name}: name exactly one of pattern and standard")
@@ -807,27 +936,52 @@ def reader(root):
     """What the checks count in: a tracked file's text, or None when there is
     no file to read (gone, a directory). A byte that is not UTF-8 is kept as
     a surrogate (surrogateescape), so a file is always counted: one bad byte
-    must not hide the matches around it. A file that is there but cannot be
-    read (its permissions, say) is a ConfigError, never "no text"."""
+    must not hide the matches around it. A file that begins with a UTF-16
+    byte order mark is read as UTF-16, as a browser reads it, so its text
+    is not hidden between NUL bytes. A file that is there but cannot be
+    read (its permissions, say) is a ConfigError, never "no text".
+
+    A symlink is not followed, at the path or on the way to it: its target,
+    when it is tracked, is counted where it lives, once, and a target outside
+    the repository is not read. A dangling link and a link loop (ELOOP) are
+    no file, like a directory."""
+    linked = {"": False}
+
+    def under_link(directory):
+        if directory not in linked:
+            linked[directory] = (under_link(posixpath.dirname(directory))
+                                 or os.path.islink(os.path.join(root, directory)))
+        return linked[directory]
+
+    def cannot(path, e):
+        # a directory on the way that cannot be searched, say: the file is
+        # there, so it is never counted as empty
+        return ConfigError(f"{path}: tracked, but cannot be read ({e.strerror or e}); "
+                           f"a file the checks cannot read is never counted as empty")
+
     def read(path):
         full = os.path.join(root, path)
         try:
-            mode = os.stat(full).st_mode
+            mode = os.lstat(full).st_mode
         except (FileNotFoundError, NotADirectoryError):
             return None
         except OSError as e:
-            # a directory on the way that cannot be searched, say: the file
-            # is there, so it is never counted as empty
-            raise ConfigError(f"{path}: tracked, but cannot be read ({e.strerror or e}); "
-                              f"a file the checks cannot read is never counted as empty")
-        if not stat.S_ISREG(mode):
+            if e.errno == errno.ELOOP:
+                return None
+            raise cannot(path, e)
+        if not stat.S_ISREG(mode) or under_link(posixpath.dirname(path)):
             return None
         try:
-            with open(full, "rb") as f:
-                return f.read().decode("utf-8", "surrogateescape")
+            fd = os.open(full, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            with os.fdopen(fd, "rb") as f:
+                data = f.read()
         except OSError as e:
-            raise ConfigError(f"{path}: tracked, but cannot be read ({e.strerror or e}); "
-                              f"a file the checks cannot read is never counted as empty")
+            if e.errno == errno.ELOOP:    # it became a link since the lstat
+                return None
+            raise cannot(path, e)
+        if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+            return data.decode("utf-16", "replace")
+        return data.decode("utf-8", "surrogateescape")
     return read
 
 
@@ -892,13 +1046,20 @@ class Commit:
         return decoded(git_bytes("show", f"{self.ref}:./{name}", cwd=self.root), self.where(name))
 
 
-def run(root, config_path, base, summary, notes=()):
+def run(root, config_path, base, summary, notes=(), level=ENFORCED, platform=None):
+    """The checks of `config_path` at `level`, the standard they run at."""
     with open(os.path.join(root, config_path), encoding="utf-8") as f:
         text = f.read()
-    doc = parse(text, config_path)
+    doc = parse(text, config_path, level)
     files = tracked(root)
     read = reader(root)
     failures, rows, notes = [], [], list(notes)
+    plugin = PLUGIN_FILE in files
+    own_src = [p for p in files if p.startswith("src/")]
+
+    def files_of(entry):
+        # In a plugin, R11 to R14 read src/; dist/ is the host's to vet.
+        return own_src if plugin and entry.get("rule") in PLUGIN_RULES else files
 
     base_checks = None
     base_reports = None
@@ -907,12 +1068,12 @@ def run(root, config_path, base, summary, notes=()):
         if base_text is None:
             notes.append(f"The base {base} has no {config_path}; nothing to compare with.")
         else:
-            base_doc = parse(base_text, f"{base}:{config_path}")
+            base_doc = parse(base_text, f"{base}:{config_path}", level)
             base_checks = {c["id"]: c for c in base_doc.get("check", [])}
             base_reports = {r["id"]: r for r in base_doc.get("report", [])}
 
     for c in doc.get("check", []):
-        hits = count(c, files, read)
+        hits = count(c, files_of(c), read)
         now, limit = len(hits), c["max"]
         state = "holds"
         if now > limit:
@@ -961,10 +1122,25 @@ def run(root, config_path, base, summary, notes=()):
             if changed and (not why or why == b.get("why", "").strip()):
                 failures.append(f"{rid} ({r['rule']}): {', '.join(changed)} changed from the base without a new why. Write in its why what the report now lists and why, or keep the base's.")
 
+    for c in doc.get("check", []):
+        if not in_scope(c, files_of(c)):
+            said = (f"{c['id']} ({c['rule']}): its files match no tracked file it may count, so it counts nothing "
+                    f"and holds at any max. Name the files it is for.")
+            if rank(level) >= rank("v3"):
+                failures.append(said)
+            else:
+                notes.append(f"Warning: {said} From v3 this fails.")
+    if rank(level) >= rank("v3"):
+        failures += required(doc, files, plugin, level, config_path)
+        failures += agents_named(root, level)
+        pinned, said = pins(files, read, platform)
+        failures += pinned
+        notes += said
+
     reports = []
     for r in doc.get("report", []):
         per = {}
-        for path, _, _ in count(r, files, read):
+        for path, _, _ in count(r, files_of(r), read):
             per[path] = per.get(path, 0) + 1
         top = sorted(per.items(), key=lambda kv: (-kv[1], kv[0]))[: r.get("top", 10)]
         reports.append((r, sum(per.values()), top))
@@ -981,6 +1157,108 @@ def run(root, config_path, base, summary, notes=()):
     if failures:
         out += ["", "### What fails", "", "```"] + failures + ["```"]
     return write(out, summary, 1 if failures else 0)
+
+
+def in_scope(entry, files):
+    """Whether any tracked file is one `entry` reads: in its files, not in
+    its allowed."""
+    include = [glob_re(g) for g in entry["files"]]
+    allowed = [glob_re(g) for g in entry.get("allowed", [])]
+    return any(matches_any(p, include) and not matches_any(p, allowed) for p in files)
+
+
+def present(files, plugin):
+    """What the repository holds of its own, as the keys of APPLIES."""
+    exts = set()
+    for p in files:
+        if NOT_OWN & set(p.split("/")[:-1]) or (plugin and p.startswith("dist/")):
+            continue
+        exts.add(posixpath.splitext(p)[1].lower())
+    found = {lang for lang, own in LANGUAGES.items() if exts & own}
+    if "js" in found or exts & PAGES:
+        found.add("web")
+    if plugin:
+        found.add("plugin")
+    if found & {"web", "plugin"}:
+        found.add("web or plugin")
+    return found
+
+
+def required(doc, files, plugin, level, config_path):
+    """The checks `level` requires where they apply, each there as a
+    [[check]] under its rule. A max above 0 is the ratchet's business (its
+    why); a check that is missing is a failure."""
+    here = {c["id"]: c for c in doc.get("check", [])}
+    found, failures = present(files, plugin), []
+    for version, entries in REQUIRED.items():
+        if rank(version) > rank(level):
+            continue
+        for cid, rule, where in entries:
+            if where not in found:
+                continue
+            c = here.get(cid)
+            if c is None:
+                failures.append(f"{cid} ({rule}): required at {level}, since {APPLIES[where]}, and {config_path} "
+                                f"has no such check. Add it, at today's count with a why if that is above 0.")
+            elif c["rule"] != rule:
+                failures.append(f"{cid} ({c['rule']}): this check is {rule}'s at {level}; write rule = \"{rule}\".")
+    return failures
+
+
+def agents_named(root, level):
+    """AGENTS.md names the standard the repository follows, the same as
+    [standard] version."""
+    text = WorkTree(root).read(AGENTS_FILE)
+    if text is None:
+        return [f"{AGENTS_FILE}: missing; from v3 it names the standard first: "
+                f"\"This repository follows tehas-standard {level} (`{STANDARD_FILE}`)\"."]
+    m = AGENTS_NAMES.search(text)
+    if not m:
+        return [f"{AGENTS_FILE}: names no tehas-standard version; write "
+                f"\"This repository follows tehas-standard {level} (`{STANDARD_FILE}`)\" in its first section."]
+    if m.group(1) != level:
+        return [f"{AGENTS_FILE}: names tehas-standard {m.group(1)}, and {STANDARD_FILE} says {level}; "
+                f"name the same version in both."]
+    return []
+
+
+def pins(files, read, platform):
+    """Each exact pin the repository writes (PINS) against its [platform]:
+    (failures, notes). A pin outside its major, or of a toolchain [platform]
+    does not name, fails. A value that is no exact version (`stable`, `^7.0`)
+    and a toolchain with no pin found are noted, not failed: the standard
+    asks for the pin where the repository has always kept one, and a pin
+    this script does not find is not compared."""
+    platform = platform if isinstance(platform, dict) else {}
+    failures, notes, seen = [], [], set()
+    for tool, globs, pattern in PINS:
+        where = [glob_re(g) for g in globs]
+        regex = re.compile(pattern, re.MULTILINE)
+        for path in files:
+            if not matches_any(path, where):
+                continue
+            text = read(path)
+            if text is None:
+                continue
+            for m in regex.finditer(text):
+                n, value = text.count("\n", 0, m.start()) + 1, m.group(1)
+                at = f"{path}:{n}"
+                exact = EXACT.fullmatch(value)
+                if not exact:
+                    notes.append(f"{at}: {tool} {value!r} is not an exact version, so it is not compared with [platform].")
+                    continue
+                seen.add(tool)
+                allowed = platform.get(tool)
+                if allowed is None:
+                    failures.append(f"{at}: pins {tool} {value}, and [platform] names no {tool}; "
+                                    f"name it there, at a major this standard allows "
+                                    f"({', '.join(sorted(PLATFORM_ALLOWED[tool]))}).")
+                elif exact.group(1) != allowed.split(".")[0]:
+                    failures.append(f"{at}: pins {tool} {value}, outside [platform] {tool} = \"{allowed}\".")
+    for tool in sorted(set(platform) - seen):
+        looked = sorted({g for t, globs, _ in PINS if t == tool for g in globs})
+        notes.append(f"[platform] {tool}: no exact pin found (looked in {', '.join(looked)}), so none is compared.")
+    return failures, notes
 
 
 def write(out, summary, code):
@@ -1044,28 +1322,55 @@ def no_downgrade(base, found, platform):
     come back.
 
     A base whose pointer is there but Unreadable would refuse every pull
-    request, the one that repairs it too. Then the head must name ENFORCED,
-    the highest standard this script knows, so it cannot be lower than
-    whatever the base meant. The base's [platform] is still compared when
+    request, the one that repairs it too. Then the head must name at least
+    the highest version the base's pointer files spell out anywhere in
+    their text (a comment too), and at least ENFORCED: what the base meant
+    is not known, so the head may not be lower than anything it could have
+    meant that this script knows. The base's [platform] is still compared when
     its file is TOML (only its [standard] is bad); it is not compared only
     when the file cannot be parsed at all."""
     try:
         was, before = pointer(base, history=True)
     except Unreadable as e:
-        if found != ENFORCED:
-            raise ConfigError(f"{e}; with the base's standard unreadable, this head must name {ENFORCED}, "
-                              f"the highest standard this script knows")
+        floor = spelled_out(base)
+        if found is None or rank(found) < rank(floor):
+            raise ConfigError(f"{e}; with the base's standard unreadable, this head must name {floor} or later, "
+                              f"the highest version the base's pointer spells out")
         parsed, before = base_platform(base)
         platform_kept(base, before, platform)
         compared = ("its [platform] is compared" if parsed
                     else "the base's [platform] is not compared, since its file cannot be parsed")
-        return [f"The base's standard cannot be read ({e}). This head names {ENFORCED}, the highest this "
-                f"script knows, so it is no downgrade; {compared}."]
+        return [f"The base's standard cannot be read ({e}). This head names {found}, at or above {floor}, "
+                f"the highest version the base's pointer spells out, so it is no downgrade; {compared}."]
     if was is not None and (found is None or rank(found) < rank(was)):
         raise ConfigError(f"the standard goes down from {was} at {base.ref} to {found or 'none'}; "
                           f"an adopted standard only goes up")
     platform_kept(base, before, platform)
     return []
+
+
+SPELLED = re.compile(r"(?<![\w.])v[1-9][0-9]*(?:\.[1-9][0-9]*)?(?!\w|\.[0-9])")
+
+
+def spelled_out(base):
+    """The highest version this script knows that the base's pointer files
+    spell out in their text, read as bytes, and ENFORCED at least."""
+    best = ENFORCED
+    for name in (STANDARD_FILE, OLD_STANDARD_FILE):
+        try:
+            text = base.read(name)
+        except Unreadable:
+            text = git_bytes("show", f"{base.ref}:./{name}", cwd=base.root).decode("utf-8", "replace")
+        except ConfigError:
+            continue
+        for v in SPELLED.findall(text or ""):
+            try:
+                v = checked_version(v, name)
+            except ConfigError:
+                continue
+            if rank(v) > rank(best):
+                best = v
+    return best
 
 
 def base_platform(base):
@@ -1097,7 +1402,13 @@ def platform_kept(base, before, platform):
 
 
 def rank(version):
+    """A version's place in the order: v2 < v2.1 < v2.10 < v3."""
     return tuple(int(n) for n in version[1:].split("."))
+
+
+def major(version):
+    """`v3` for `v3` and `v3.1`."""
+    return version.split(".")[0]
 
 
 def standard_in_doc(doc, name):
@@ -1135,18 +1446,22 @@ def standard_in_line(text, name):
 
 
 def known():
-    return ", ".join(sorted(STANDARDS))
+    return ", ".join(f"{v}, {v}.1, {v}.2, ..." if v in MINORED else v for v in STANDARDS)
 
 
 def checked_version(value, name):
+    """A version this script knows: a major of STANDARDS, or a minor `vN.M`
+    (M from 1, no leading zero) of a major in MINORED. A later major is
+    refused by name; anything else is no standard."""
     if not isinstance(value, str):
         raise Unreadable(f"{name}: the version must be a string such as \"v2\"")
-    if re.fullmatch(r"v[1-9][0-9]*(\.[0-9]+)?", value) and value not in STANDARDS:
+    m = VERSION.fullmatch(value)
+    if m and int(m.group(1)) > rank(SCRIPT)[0]:
         # Not Unreadable: a base at a later standard is no repair to make,
         # it asks for that standard's script.
-        raise ConfigError(f"{name}: standard {value} is newer than this script, "
-                          f"which knows {known()}; take the architecture.py that defines {value}")
-    if value not in STANDARDS:
+        raise ConfigError(f"{name}: standard {value} is newer than this script; this script is tehas-standard "
+                          f"{SCRIPT}, take the script of {value} for {value}")
+    if not m or (m.group(2) and major(value) not in MINORED):
         raise Unreadable(f"{name}: {value!r} is not a standard; write one of {known()}")
     return value
 
@@ -1195,9 +1510,11 @@ def main(argv=None):
         if a.base:
             verify_base(a.root, a.base)
             notes = no_downgrade(Commit(a.root, a.base), found, platform)
-        if found != ENFORCED and not a.force:
+        enforced = found is not None and rank(found) >= rank(ENFORCED)
+        if not enforced and not a.force:
             return skipped(found, a.summary, notes)
-        return run(a.root, a.config, a.base, a.summary, notes)
+        # --force below v2 runs v2's checks, and only those
+        return run(a.root, a.config, a.base, a.summary, notes, found if enforced else ENFORCED, platform)
     except (ConfigError, OSError) as e:
         print(f"architecture: {e}", file=sys.stderr)
         return 2

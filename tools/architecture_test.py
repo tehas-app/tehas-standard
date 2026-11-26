@@ -358,9 +358,11 @@ class Standard(unittest.TestCase):
         self.assertEqual(code, 1)
 
     def test_a_later_standard_needs_a_later_script(self):
-        code, out = self.breaking("v3").run()
+        # v3 is this script's own; the first later one is v4
+        code, out = self.breaking("v4").run()
         self.assertEqual(code, 2)
-        self.assertIn("standard v3 is newer than this script", out)
+        self.assertIn("standard v4 is newer than this script; this script is tehas-standard v3, "
+                      "take the script of v4 for v4", out)
 
     def test_another_value_is_refused(self):
         code, out = self.breaking("strict").run()
@@ -575,9 +577,10 @@ class Standard(unittest.TestCase):
         self.assertIn("the version must be a string", out)
 
     def test_a_minor_needs_a_later_script(self):
-        code, out = self.breaking("v2.1").run()
+        # v2.1 and v3.1 are this script's to enforce; a minor of v4 is not
+        code, out = self.breaking("v4.1").run()
         self.assertEqual(code, 2)
-        self.assertIn("standard v2.1 is newer than this script", out)
+        self.assertIn("standard v4.1 is newer than this script", out)
 
     def test_a_file_that_is_not_utf8_is_refused(self):
         r = self.breaking(None)
@@ -1051,7 +1054,8 @@ class FollowUps(unittest.TestCase):
         with open(architecture.__file__, encoding="utf-8") as f:
             text = f.read()
         after = text.split('"""', 2)[2]
-        self.assertEqual(after.split("\n")[1], f"# tehas-standard {architecture.ENFORCED}")
+        self.assertEqual(after.split("\n")[1], f"# tehas-standard {architecture.SCRIPT}")
+        self.assertEqual(after.split("\n")[1], "# tehas-standard v3")
 
     def test_6_the_skip_hint_can_be_followed_as_written(self):
         r = base_repo(standard=None)
@@ -1110,11 +1114,11 @@ class FollowUps(unittest.TestCase):
         self.assertEqual(code, 2, out)
 
     def test_7_a_later_standard_at_the_base_is_no_repair(self):
-        r = self.repo_at({"tehas.toml": pointer("v3")})
+        r = self.repo_at({"tehas.toml": pointer("v4")})
         self.head(r, {"tehas.toml": pointer("v2")})
         code, out = r.run("--base", "main")
         self.assertEqual(code, 2, out)
-        self.assertIn("main:tehas.toml: standard v3 is newer than this script", out)
+        self.assertIn("main:tehas.toml: standard v4 is newer than this script", out)
 
     def test_7_a_malformed_head_file_is_still_refused(self):
         r = self.repo_at({"tehas.toml": pointer("v2")})
@@ -1204,6 +1208,508 @@ class FollowUps(unittest.TestCase):
         took(500)
         small, large = min(took(4000) for _ in range(3)), min(took(16000) for _ in range(3))
         self.assertLess(large, small * 9 + 0.05)
+
+
+RS_ESCAPE = """
+[[check]]
+id = "rs-escape"
+rule = "R12"
+what = "no allow"
+pattern = '#\\[allow\\('
+files = ["src/**/*.rs"]
+max = 0
+"""
+
+
+def check(cid, rule, pattern, files, max=0, why="", allowed=()):
+    """One [[check]] as TOML text."""
+    out = f'\n[[check]]\nid = "{cid}"\nrule = "{rule}"\nwhat = "{cid}"\npattern = \'{pattern}\'\n'
+    out += f"files = {list(files)!r}\n".replace("'", '"')
+    if allowed:
+        out += f"allowed = {list(allowed)!r}\n".replace("'", '"')
+    out += f"max = {max}\n" + (f'why = "{why}"\n' if why else "")
+    return out
+
+
+def agents(version):
+    return f"# Agents\n\nThis repository follows tehas-standard {version} (`tehas.toml`):\n{URL}/tree/{version}/{version}\n"
+
+
+def v3_repo(standard="v3", checks=RS_ESCAPE, agents_version=None, **kw):
+    """base_repo at `standard`, with what v3 asks of a Rust repository:
+    rs-escape and AGENTS.md naming the version."""
+    r = base_repo(standard=standard, **kw)
+    r.write("architecture.toml", config(**kw) + checks)
+    r.write("AGENTS.md", agents(agents_version or standard))
+    return r
+
+
+WEB_CHECKS = RS_ESCAPE + "".join(check(cid, rule, "NEVER", ["**/*.js"]) for cid, rule in (
+    ("kit-solid-import", "R11"), ("kit-copy", "R11"), ("kit-own-fetch", "R11"), ("kit-raw-html", "R11"),
+    ("vendor-unlisted", "R11"), ("ts-strict", "R12"), ("ts-escape", "R12"), ("model-pure", "R13")))
+
+
+class Versions(unittest.TestCase):
+    """The v3 script knows v1, v2 and v3 and their minors, and enforces
+    from v2 on, in order (architecture-script.md items 1, 2, 9)."""
+
+    def test_v3_is_enforced_not_skipped(self):
+        r = v3_repo()
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("| `routes` | R1 |  | 1 | 1 | holds |", out)
+        r.write("src/core.rs", 'fn x() { call("/api/d") }\n')
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("routes (R1): 2 places, 1 allowed", out)
+        self.assertNotIn("Skipped", out)
+
+    def test_v3_1_is_enforced_with_the_checks_of_v3(self):
+        r = v3_repo("v3.1")
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        r.write("architecture.toml", config())
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("rs-escape (R12): required at v3.1, since it holds Rust", out)
+
+    def test_v2_1_is_enforced_as_v2(self):
+        r = base_repo(standard="v2.1")
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        r.write("src/core.rs", 'fn x() { call("/api/d") }\n')
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("routes (R1): 2 places, 1 allowed", out)
+
+    def test_v4_is_refused_by_name(self):
+        for version in ("v4", "v4.1", "v10"):
+            with self.subTest(version=version):
+                code, out = v3_repo(version).run()
+                self.assertEqual(code, 2, out)
+                self.assertIn(f"this script is tehas-standard v3, take the script of {version} for {version}", out)
+
+    def test_shapes_that_are_no_version_are_refused(self):
+        for version in ("v1.1", "v2.0", "v2.01", "v3.", "V3", "v3.1.2"):
+            with self.subTest(version=version):
+                code, out = v3_repo(version).run()
+                self.assertEqual(code, 2, out)
+                self.assertIn(f"{version!r} is not a standard", out)
+
+    def test_minors_rank_by_number(self):
+        r = base_repo(standard="v2.10")
+        r.commit()
+        r.write("tehas.toml", pointer("v2.9"))
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 2, out)
+        self.assertIn("the standard goes down from v2.10 at main to v2.9", out)
+        r.write("tehas.toml", pointer("v2.11"))
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 0, out)
+
+    def test_with_a_base_at_v3_writing_v2_fails(self):
+        r = v3_repo()
+        r.commit()
+        r.write("tehas.toml", pointer("v2"))
+        r.write("AGENTS.md", agents("v2"))
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 2, out)
+        self.assertIn("the standard goes down from v3 at main to v2", out)
+
+    def test_with_a_base_at_v3_deleting_the_file_fails(self):
+        r = v3_repo()
+        r.commit()
+        r.git("rm", "-q", "tehas.toml")
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 2, out)
+        self.assertIn("goes down from v3 at main to none", out)
+
+    def test_with_a_base_at_v3_1_writing_v3_fails(self):
+        r = v3_repo("v3.1")
+        r.commit()
+        r.write("tehas.toml", pointer("v3"))
+        r.write("AGENTS.md", agents("v3"))
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 2, out)
+        self.assertIn("goes down from v3.1 at main to v3", out)
+
+    def test_v3_in_the_old_file_asks_for_the_move(self):
+        r = v3_repo(standard=None)
+        r.write(".tehas/coding-standard", "v3\n")
+        code, out = r.run()
+        self.assertEqual(code, 2, out)
+        self.assertIn(f'.tehas/coding-standard says v3; move it to tehas.toml as [standard] url = "{URL}", version = "v3"', out)
+
+    def test_an_unreadable_base_that_spells_v3_needs_v3_at_the_head(self):
+        r = base_repo(standard=None)
+        r.write("tehas.toml", '[standard]\nversion = "v3"\n')     # no url: unreadable
+        r.commit()
+        r.write("tehas.toml", pointer("v2"))
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 2, out)
+        self.assertIn("this head must name v3 or later, the highest version the base's pointer spells out", out)
+        r.write("tehas.toml", pointer("v3"))
+        r.write("architecture.toml", config() + RS_ESCAPE)
+        r.write("AGENTS.md", agents("v3"))
+        code, out = r.run("--base", "main")
+        self.assertEqual(code, 0, out)
+        self.assertIn("This head names v3, at or above v3", out)
+
+
+class Rules(unittest.TestCase):
+    """A check's rule is one of its version's rules (item 3)."""
+
+    def test_r11_to_r14_are_accepted_at_v3(self):
+        for rule in ("R11", "R12", "R13", "R14"):
+            with self.subTest(rule=rule):
+                r = v3_repo(checks=RS_ESCAPE + check("extra", rule, "NEVER", ["src/**/*.rs"]))
+                code, out = r.run()
+                self.assertEqual(code, 0, out)
+                self.assertIn(f"| `extra` | {rule} |", out)
+
+    def test_r15_is_refused_by_name_at_v3(self):
+        r = v3_repo(checks=RS_ESCAPE + check("extra", "R15", "NEVER", ["src/**/*.rs"]))
+        code, out = r.run()
+        self.assertEqual(code, 2, out)
+        self.assertIn("check extra: rule must be one of R1 to R14; R15 is not a rule of v3", out)
+
+    def test_r11_is_refused_by_name_at_v2(self):
+        for version in ("v2", "v2.1"):
+            with self.subTest(version=version):
+                r = base_repo(standard=version)
+                r.write("architecture.toml", config() + check("extra", "R11", "NEVER", ["src/**/*.rs"]))
+                code, out = r.run()
+                self.assertEqual(code, 2, out)
+                self.assertIn(f"check extra: rule must be one of R1 to R10; R11 is not a rule of {version}", out)
+
+    def test_a_rule_that_is_no_rule_is_refused(self):
+        for rule in ("R0", "R01", "r1", "R"):
+            with self.subTest(rule=rule):
+                r = v3_repo(checks=RS_ESCAPE + check("extra", rule, "NEVER", ["src/**/*.rs"]))
+                code, out = r.run()
+                self.assertEqual(code, 2, out)
+                self.assertIn("check extra: rule must be one of R1 to R14", out)
+
+
+class Required(unittest.TestCase):
+    """At v3 the checks of R11 to R14 must be there where they apply."""
+
+    def test_a_missing_check_fails_and_is_named(self):
+        r = v3_repo(checks="")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("rs-escape (R12): required at v3, since it holds Rust, and architecture.toml has no such check", out)
+
+    def test_only_what_applies_is_required(self):
+        code, out = v3_repo().run()
+        self.assertEqual(code, 0, out)
+        for cid in ("kit-solid-import", "ts-strict", "py-escape", "sh-escape", "model-pure", "plugin-provider"):
+            self.assertNotIn(cid, out)
+
+    def test_pages_require_the_kit_checks(self):
+        r = v3_repo()
+        r.write("web/page.js", "export const a = 1;\n")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        for cid in ("kit-solid-import", "kit-copy", "kit-own-fetch", "kit-raw-html", "vendor-unlisted",
+                    "ts-strict", "ts-escape", "model-pure"):
+            self.assertIn(f"{cid} (R1", out)
+        r.write("architecture.toml", config() + WEB_CHECKS)
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+
+    def test_vendored_files_say_nothing_of_the_languages_here(self):
+        r = v3_repo()
+        r.write("vendor/lib/x.js", "export const a = 1;\n")
+        r.write("web/vendor/run.sh", "echo\n")
+        r.write("node_modules/y/z.py", "x = 1\n")
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+
+    def test_a_required_check_may_hold_a_max_with_a_why(self):
+        r = v3_repo(checks=check("rs-escape", "R12", "allow", ["src/**/*.rs"], max=1, why="one left, step 5"))
+        r.write("src/core.rs", "#[allow(dead_code)]\nfn x() {}\n")
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("| `rs-escape` | R12 |  | 1 | 1 | holds |", out)
+
+    def test_a_required_check_under_another_rule_fails(self):
+        r = v3_repo(checks=check("rs-escape", "R4", "NEVER", ["src/**/*.rs"]))
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn('rs-escape (R4): this check is R12\'s at v3; write rule = "R12".', out)
+
+    def test_a_report_does_not_stand_for_a_check(self):
+        r = v3_repo(checks='\n[[report]]\nid = "rs-escape"\nrule = "R12"\nwhat = "x"\npattern = "allow"\nfiles = ["src/**"]\n')
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("rs-escape (R12): required at v3", out)
+
+    def test_force_below_v2_runs_v2s_checks_only(self):
+        r = base_repo(standard="v1")
+        code, out = r.run("--force")
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("required at", out)
+        r.write("tehas.toml", pointer("v3"))
+        r.write("AGENTS.md", agents("v3"))
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("rs-escape (R12): required at v3", out)
+
+
+class Plugin(unittest.TestCase):
+    """In a plugin repository, R11 to R14 read src/ (item 4)."""
+
+    def plugin(self, checks):
+        r = Repo()
+        r.write("tehas.toml", pointer("v3"))
+        r.write("AGENTS.md", agents("v3"))
+        r.write("tehas-plugin.json", '{"plugin": 2}\n')
+        r.write("architecture.toml", "version = 1\n" + checks)
+        r.write("src/view/board.tsx", 'import { createSignal } from "solid-js";\n')
+        r.write("src/driver.ts", 'import { createSignal } from "solid-js";\n')
+        r.write("dist/view/board.js", 'import { createSignal } from "solid-js";\n')
+        r.write("dist/driver.js", 'import { createSignal } from "solid-js";\n')
+        return r
+
+    def all_checks(self, solid_max=1):
+        out = check("kit-solid-import", "R11", "from .solid", ["**/*.ts", "**/*.tsx", "**/*.js"],
+                    max=solid_max, why="the driver, until step 2" if solid_max else "", allowed=["src/view/**"])
+        for cid, rule in (("kit-copy", "R11"), ("kit-own-fetch", "R11"), ("kit-raw-html", "R11"),
+                          ("vendor-unlisted", "R11"), ("ts-strict", "R12"), ("ts-escape", "R12"),
+                          ("model-pure", "R13"), ("plugin-provider", "R14")):
+            out += check(cid, rule, "NEVER", ["src/**"])
+        return out
+
+    def test_dist_is_not_counted_a_view_is_allowed_a_driver_is_counted(self):
+        r = self.plugin(self.all_checks(solid_max=1))
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("| `kit-solid-import` | R11 |  | 1 | 1 | holds |", out)
+        r.write("architecture.toml", "version = 1\n" + self.all_checks(solid_max=0))
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("kit-solid-import (R11): 1 places, 0 allowed", out)
+        self.assertIn("src/driver.ts:1:", out)
+        self.assertNotIn("dist/", out)
+
+    def test_a_plugin_needs_plugin_provider(self):
+        r = self.plugin(self.all_checks().replace('id = "plugin-provider"', 'id = "other"'))
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("plugin-provider (R14): required at v3, since it is a plugin", out)
+
+    def test_other_rules_still_read_the_whole_plugin(self):
+        r = self.plugin(self.all_checks() + check("dist-word", "R1", "createSignal", ["dist/**"], max=2, why="the build"))
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("| `dist-word` | R1 |  | 2 | 2 | holds |", out)
+
+    def test_an_r11_check_on_dist_alone_has_no_scope(self):
+        r = self.plugin(self.all_checks() + check("kit-dist", "R11", "solid", ["dist/**"]))
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("kit-dist (R11): its files match no tracked file it may count", out)
+
+
+class Agents(unittest.TestCase):
+    """At v3, AGENTS.md names the version tehas.toml names (item 7)."""
+
+    def test_the_same_version_passes(self):
+        code, out = v3_repo().run()
+        self.assertEqual(code, 0, out)
+
+    def test_another_version_fails(self):
+        code, out = v3_repo(agents_version="v2").run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("AGENTS.md: names tehas-standard v2, and tehas.toml says v3; name the same version in both.", out)
+
+    def test_a_minor_is_named_exactly(self):
+        code, out = v3_repo("v3.1", agents_version="v3").run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("names tehas-standard v3, and tehas.toml says v3.1", out)
+        code, out = v3_repo("v3.1").run()
+        self.assertEqual(code, 0, out)
+
+    def test_no_file_or_no_name_fails(self):
+        r = v3_repo()
+        r.git("rm", "-qf", "AGENTS.md")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("AGENTS.md: missing", out)
+        r.write("AGENTS.md", "# Agents\n")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("AGENTS.md: names no tehas-standard version", out)
+
+    def test_it_is_read_from_v3_on_only(self):
+        r = base_repo()
+        r.write("AGENTS.md", agents("v3"))
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        r = v3_repo(agents_version="v2")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("AGENTS.md: names tehas-standard v2", out)
+
+
+class Pins(unittest.TestCase):
+    """At v3, each exact pin is within its [platform] major (item 6)."""
+
+    PLATFORM = '\n[platform]\nrust = "1.x"\ntypescript = "7.x"\n'
+
+    def repo(self, pins, platform=PLATFORM, standard="v3"):
+        r = v3_repo(standard, checks=RS_ESCAPE if standard != "v2" else "")
+        r.write("tehas.toml", pointer(standard) + platform)
+        for path, text in pins.items():
+            r.write(path, text)
+        return r
+
+    def test_pins_within_the_major_pass(self):
+        r = self.repo({"rust-toolchain.toml": '[toolchain]\nchannel = "1.100.0"\n',
+                       "host/versions.env": "RUST_VERSION=1.100.0\nTSC_VERSION=7.0.2\n",
+                       ".github/workflows/ci.yml": "env:\n  TSC_VERSION: 7.0.2\n  RUST_VERSION: '1.99'\n",
+                       "package.json": '{\n  "devDependencies": {\n    "typescript": "7.0.2"\n  }\n}\n'})
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("no exact pin", out)
+
+    def test_a_pin_outside_the_major_fails_and_is_named(self):
+        cases = {"rust-toolchain.toml": ('[toolchain]\nchannel = "2.0.0"\n', 'rust-toolchain.toml:2: pins rust 2.0.0, outside [platform] rust = "1.x"'),
+                 "versions.env": ("TSC_VERSION=6.0.3\n", 'versions.env:1: pins typescript 6.0.3, outside [platform] typescript = "7.x"'),
+                 ".github/workflows/ci.yml": ("steps:\n  - run: npx -p typescript@5.9.2 tsc\n", "ci.yml:2: pins typescript 5.9.2"),
+                 "package.json": ('{"devDependencies": {\n"typescript": "6.0.0"}}\n', "package.json:2: pins typescript 6.0.0")}
+        for path, (text, want) in cases.items():
+            with self.subTest(path=path):
+                code, out = self.repo({path: text}).run()
+                self.assertEqual(code, 1, out)
+                self.assertIn(want, out)
+
+    def test_the_pins_are_compared_from_v3_on_only(self):
+        pin = {"rust-toolchain.toml": '[toolchain]\nchannel = "2.0.0"\n'}
+        code, out = self.repo(pin, standard="v2").run()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("rust-toolchain", out)
+        code, out = self.repo(pin, standard="v3").run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("pins rust 2.0.0", out)
+
+    def test_a_pin_of_a_toolchain_platform_does_not_name_fails(self):
+        r = self.repo({"rust-toolchain.toml": '[toolchain]\nchannel = "1.100.0"\n'}, platform="")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("rust-toolchain.toml:2: pins rust 1.100.0, and [platform] names no rust", out)
+
+    def test_no_pin_and_a_floating_channel_are_noted(self):
+        r = self.repo({"rust-toolchain.toml": '[toolchain]\nchannel = "stable"\n'})
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("rust-toolchain.toml:2: rust 'stable' is not an exact version", out)
+        self.assertIn("[platform] rust: no exact pin found", out)
+        self.assertIn("[platform] typescript: no exact pin found", out)
+
+    def test_a_pin_deeper_than_one_directory_is_not_read(self):
+        r = self.repo({"test/fixtures/old/versions.env": "TSC_VERSION=5.0.0\n", "vendor/x/versions.env": "RUST_VERSION=0.9.0\n"})
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+
+
+class Scope(unittest.TestCase):
+    """A check whose files match nothing counts nothing (#29 item 2)."""
+
+    def test_at_v2_it_is_a_warning(self):
+        r = base_repo()
+        r.write("architecture.toml", config() + check("ghost", "R1", "x", ["lib/**/*.rs"]))
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("Warning: ghost (R1): its files match no tracked file it may count", out)
+        self.assertIn("From v3 this fails.", out)
+
+    def test_at_v3_it_fails(self):
+        r = v3_repo(checks=RS_ESCAPE + check("ghost", "R1", "x", ["lib/**/*.rs"]))
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("ghost (R1): its files match no tracked file it may count", out)
+        self.assertNotIn("Warning", out)
+
+    def test_every_file_allowed_is_no_scope_either(self):
+        r = v3_repo(checks=RS_ESCAPE + check("ghost", "R1", "x", ["src/*.rs"], allowed=["src/**"]))
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("ghost (R1): its files match no tracked file", out)
+
+
+class Reading(unittest.TestCase):
+    """How a tracked file is read (#29 items 1, 3, 6 and 7)."""
+
+    def test_a_symlink_inside_the_repository_is_counted_where_it_lives(self):
+        r = base_repo()
+        os.symlink("web.rs", os.path.join(r.root, "src/also.rs"))
+        r.git("add", "src/also.rs")
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertIn("| `routes` | R1 |  | 1 | 1 | holds |", out)
+
+    def test_a_symlink_out_of_the_repository_is_not_read(self):
+        r = base_repo()
+        with tempfile.TemporaryDirectory() as outside:
+            with open(os.path.join(outside, "x.rs"), "w") as f:
+                f.write('fn x() { call("/api/q") }\n')
+            os.symlink(os.path.join(outside, "x.rs"), os.path.join(r.root, "src/out.rs"))
+            r.git("add", "src/out.rs")
+            code, out = r.run()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("out.rs", out)
+
+    def test_a_symlink_loop_is_no_file(self):
+        r = base_repo()
+        os.symlink("loop.rs", os.path.join(r.root, "src/loop.rs"))
+        r.git("add", "src/loop.rs")
+        code, out = r.run()
+        self.assertEqual(code, 0, out)
+
+    def test_a_file_under_a_symlinked_directory_is_not_read(self):
+        r = base_repo()
+        r.commit()
+        os.makedirs(os.path.join(r.root, "elsewhere"))
+        with open(os.path.join(r.root, "elsewhere/core.rs"), "w") as f:
+            f.write('fn x() { call("/api/d") }\n')
+        os.rename(os.path.join(r.root, "src"), os.path.join(r.root, "real"))
+        os.symlink("real", os.path.join(r.root, "src"))
+        reader = architecture.reader(r.root)
+        self.assertIsNone(reader("src/web.rs"))
+        self.assertIsNotNone(reader("real/web.rs"))
+
+    def test_utf16_with_a_bom_is_read(self):
+        r = base_repo()
+        for name, bom, codec in (("le.rs", b"\xff\xfe", "utf-16-le"), ("be.rs", b"\xfe\xff", "utf-16-be")):
+            with open(os.path.join(r.root, "src", name), "wb") as f:
+                f.write(bom + 'fn z() { call("/api/z") }\n'.encode(codec))
+            r.git("add", f"src/{name}")
+        code, out = r.run()
+        self.assertEqual(code, 1, out)
+        self.assertIn("routes (R1): 3 places, 1 allowed", out)
+        self.assertIn('src/le.rs:1: fn z() { call("/api/z") }', out)
+
+    def test_the_imports_are_in_order(self):
+        with open(architecture.__file__, encoding="utf-8") as f:
+            lines = f.read().split('"""', 2)[2].split("\n")
+        imports = [l for l in lines if l.startswith("import ")]
+        self.assertEqual(imports, sorted(imports))
+
+
+class Published(unittest.TestCase):
+    def test_the_published_hash_is_this_scripts_and_a_changed_copy_fails_it(self):
+        import hashlib
+        here = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(here, "architecture.py"), "rb") as f:
+            data = f.read()
+        with open(os.path.join(here, "architecture.py.sha256"), encoding="utf-8") as f:
+            published = f.read().split()[0]
+        self.assertEqual(hashlib.sha256(data).hexdigest(), published)
+        self.assertIn(b"\n# tehas-standard v3\n", data)
+        changed = data.replace(b"# tehas-standard v3\n", b"# tehas-standard v3 \n", 1)
+        self.assertNotEqual(hashlib.sha256(changed).hexdigest(), published)
 
 
 def _toml(c):

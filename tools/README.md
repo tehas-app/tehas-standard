@@ -2,13 +2,15 @@
 
 - `api_changes.py`: the API changes between two commits of a part
   (contracts C3).
-- `architecture.py`: the architecture script of tehas-standard v2 (coding
-  standard §4 and §5), with its tests in `architecture_test.py`. It knows no
+- `architecture.py`: the architecture script of tehas-standard v3, which
+  also runs v2 (coding standard §4 and §5, and
+  [v3/architecture-script.md](../v3/architecture-script.md)), with its
+  tests in `architecture_test.py`. It knows no
   repository: what it checks is the repository's own `architecture.toml`.
 
 ## Taking the architecture script
 
-A repository at `v2` copies `architecture.py` byte for byte to
+A repository at `v2` or later copies `architecture.py` byte for byte to
 `scripts/architecture.py`, and never edits its copy. The copy's sha256 must
 be the one in `architecture.py.sha256`:
 
