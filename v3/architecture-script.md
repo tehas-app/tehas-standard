@@ -27,7 +27,9 @@ The v2 script knows `STANDARDS = {"v1", "v2"}` with `ENFORCED = "v2"`, and
 skips every check when the value found is not `ENFORCED`. A repository at
 `v3` would then pass with nothing checked. The v3 script:
 
-1. **Knows the versions up to its tag**, majors and minors: `v1`, `v2`,
+1. **Knows the versions up to its tag**, majors and minors (a minor is
+   `vN.M`, `M` from 1 with no leading zero, ordered by number, so `v2.9`
+   is below `v2.10`): `v1`, `v2`,
    `v2.1`, ..., `v3`, `v3.1`, ... A value it does not know is refused by
    name ("this script is tehas-standard v3; take the script of v4 for v4"),
    never skipped.
@@ -42,7 +44,14 @@ skips every check when the value found is not `ENFORCED`. A repository at
    `max` above 0 with a `why`; it may not be missing. A check's `rule` may
    name any rule of the version found: `R1` to `R14` at `v3` (the v2
    script knows only `R1` to `R10`), so a check is filed under its true
-   rule; a rule the version does not have is refused by name.
+   rule; a rule the version does not have is refused by name. "Pages or
+   views" is read from the files: any tracked `.html`, JavaScript or
+   TypeScript outside `vendor/`, `node_modules/` and a plugin's `dist/`.
+   This fails closed: a repository with only a script needs the checks
+   too, at `max = 0`. "Each language present" counts Python, so every
+   repository has `py-escape`, since it carries this script. A check whose
+   `files` match no tracked file fails at `v3` (it would pass forever) and
+   only warns at `v2`.
 4. **Knows a plugin's layout.** In a repository with `tehas-plugin.json`,
    R11 to R14's checks read `src/`. `dist/` is left to the host's checks and
    the `plugin` job.
@@ -55,14 +64,25 @@ skips every check when the value found is not `ENFORCED`. A repository at
    deletion.
 6. **Checks `[platform]`**: each key one it knows (`rust`, `typescript`),
    each value a major this version allows (`"1.x"`, `"7.x"`), and each exact
-   pin in the repository's own files (`rust-toolchain.toml`, its versions
-   file) within that major.
+   pin in the repository's own files within that major. It reads the
+   pins from these places, the same in every repository: `channel` in
+   `rust-toolchain.toml` or `rust-toolchain`; `RUST_VERSION=` and
+   `TSC_VERSION=` in a `versions.env` at the root or one directory down;
+   `RUST_VERSION:`, `TSC_VERSION:` and `typescript@X` in
+   `.github/workflows/`; `typescript` in the root `package.json`. A pin
+   outside its major fails, and so does a pin of a toolchain `[platform]`
+   does not name: a repository lists every toolchain it pins. A floating
+   value (`stable`, `^7`) or no pin at all is noted, not failed. A
+   repository keeps its pins in these places; one kept elsewhere is
+   moved, not added to the script.
 7. **Checks `AGENTS.md`** names the same tehas-standard version as
    `[standard] version`.
 8. **Refuses a `--base` that is not a commit** in the repository, and reads
    the base's files by their git mode, so a symlink or directory there is
    named.
-9. **Refuses a downgrade.** With `--base`, a `[standard] version` lower than the base's fails, naming both. Removing the file counts as writing `v1`.
+9. **Refuses a downgrade.** With `--base`, a `[standard] version` lower than the base's fails, naming both. Removing the file counts as writing `v1`. A base whose
+   pointer is there but cannot be read needs a head at least as high as
+   any version that broken text spells out, and at least `v2`.
 10. **Keeps v2's rules for the test itself:** ratchets that fail above and
    below their `max`; with `--base`, a raised `max`, a removed check or a
    changed scope needs a new `why`.
