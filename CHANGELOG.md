@@ -7,7 +7,8 @@
   exchange is an upstream route; the upstream enforces the vetted origins
   per credential class; the signing job checks a blessed merge's approving
   review (plugin standard §11, §14).
-- A view's worker is a `blob:` worker under the frame's policy, since an
+- A view's worker is a `blob:` worker under the frame's policy (classic or
+  module, as the browsers allow in a sandboxed frame), since an
   opaque-origin frame can start no other; the size of `bounded` is the
   host's (plugin standard §6, §9, §14).
 - Plugin standard, from the host spec's revision 7: a view's network goes
