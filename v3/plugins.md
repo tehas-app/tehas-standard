@@ -211,6 +211,14 @@ nowhere else.
   gate included.
 - **Approval stays a person's** (guarantee 9) holds: a cycle plugin never
   approves or merges, and gives the agent no way to.
+- **Never in a role that reviews.** A host never loads a cycle plugin into
+  a role that reviews or judges the cycle's work, whatever its manifest
+  asks: a plugin inside the agent can bend the agent's output, and the
+  review is what checks that output. A host's spec names which of its
+  roles review, and refuses `cycle:<role>` for them.
+- **Named in the cycle's record.** The record of every cycle names each
+  cycle plugin it loaded, by repository and commit, and each one it
+  skipped, with why.
 - **Fetched before, never during.** The host puts the pinned `dist/agent/`
   in the cycle's sandbox, read only, before the cycle starts. Nothing of a
   cycle plugin is downloaded while the cycle runs. The tools it calls
@@ -227,9 +235,10 @@ nowhere else.
   the hardening of §14 that applies to it hold in full.
 
 *Checked:* the host refuses `kind: "cycle"` from a plugin that is not
-blessed; its tests show a cycle with plugins off loads none, a cycle loads
-only the cycle plugins turned on for its roles, and a cycle with a refused
-cycle plugin runs without it and records why.
+blessed, and `cycle:<role>` for a role that reviews; its tests show a cycle
+with plugins off loads none, a cycle loads only the cycle plugins turned on
+for its roles, and a cycle with a refused cycle plugin runs without it and
+records why.
 
 *Patterns* ([patterns.md](patterns.md) §7, §8): microkernel, capabilities and least authority,
 vet the artifact you run.
@@ -602,6 +611,31 @@ first.
   signed entry on its own, and its repository requires a person's review
   of every change: the signing job checks that the merge of the commit it
   signs had a person's approving review, and signs nothing without one.
+- **What a blessing names.** A blessing is the owner's own act, never
+  delegated, and it is kept where changing it needs a person's review (a
+  gate file of the host's repository). It names:
+  - the repository by its code host's stable id, not only its name, so a
+    renamed repository keeps its blessing and a new repository that takes
+    an old name gets none;
+  - the kind it may be (`adapter`, `cycle`), and the most it may ask. A
+    blessed commit whose manifest asks beyond that, or names another kind,
+    is refused, not held for an admin.
+- **Only commits of the protected branch.** A blessed commit is reachable
+  from the repository's protected default branch and is in the signed list
+  as blessed. A host refuses a pin to any other commit of a blessed
+  repository, one reached through a fork or a branch included, rather than
+  trusting it.
+- **The reviewed tree is the merged tree.** The signing job compares the
+  tree of the commit it signs with the tree of the head the person
+  approved, and signs nothing when they differ: a squash, a rebase or a
+  batch merge that brought in anything unreviewed. A commit pushed to the
+  branch without a reviewed pull request is never signed as blessed. A
+  batch merge is signed only when every pull request in it was approved on
+  its final head.
+- **An expired list skips blessed entries too.** A host that holds an
+  expired or unsigned list keeps no blessed entry running on its own: an
+  adapter plugin's port fails as §2a says, a cycle plugin is skipped and
+  the cycle records it.
 - **The audit and the signing are apart.** The audit jobs that run
   plugin code have no signing identity, no secrets and no network. The
   one job that signs runs no plugin code.
@@ -620,7 +654,11 @@ first.
 
 *Checked:* the audit pipeline's record for each entry, its SLSA provenance,
 and the host's refusal of a lower serial, an expired list or an unsigned
-one, shown by its tests.
+one, shown by its tests. Its tests also show a blessed repository's commit
+refused when it is not on the protected branch, when its manifest asks
+beyond its blessing, and when the repository is not the blessed id; the
+signing job's tests show a tree mismatch and an unreviewed push left
+unsigned.
 
 *Patterns* ([patterns.md](patterns.md) §8): vet the artifact you run, defence in depth.
 
@@ -663,10 +701,10 @@ tehas-standard version it meets:
       `http` and nothing a view, schedule, hook, tool or gate needs; built
       as JavaScript or as one component whose imports are exactly the
       adapter world.
-- [ ] A cycle plugin: on the vetted list, `kind: "cycle"`, asks only
-      `cycle:<role>`; `dist/agent/` holds the whole package, every
-      third-party package in it verified, and downloads nothing when it
-      runs.
+- [ ] A cycle plugin: on the vetted list, blessed for `kind: "cycle"`,
+      asks only `cycle:<role>` and never for a role that reviews;
+      `dist/agent/` holds the whole package, every third-party package in
+      it verified, and downloads nothing when it runs.
 
 ## 14. Hardening
 

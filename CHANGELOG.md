@@ -9,6 +9,12 @@
   `cycle:<role>`, given by an admin or a release's default entry; its
   `dist/agent/` package is vetted whole and fetched before the cycle,
   never during it. Guarantee 5 binds ordinary plugins, as for adapters.
+- Blessing (plugin standard §11): the owner's act alone, kept in a gate
+  file; it names the repository by its stable id, the kind and the most it
+  may ask; only commits of the protected branch, signed only when the
+  merged tree is the reviewed tree; an expired list skips blessed entries
+  too. A cycle plugin is never loaded into a role that reviews, and every
+  cycle's record names the cycle plugins it loaded or skipped.
 - Plugin standard, ready to tag: each section says how it is checked
   and names its patterns; `issue:advisory` and `feed:advisories` leave
   v3 for a later minor, and guarantee 8 names the writes a plugin makes
