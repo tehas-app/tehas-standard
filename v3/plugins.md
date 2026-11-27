@@ -48,12 +48,14 @@ requirement.
 | a third-party plugin | Any other plugin |
 | an adapter | The one implementation of a port for one outside system (coding standard R2). Delivered as a plugin, it is an adapter plugin (§2a) |
 | an adapter plugin | A plugin of `kind: "adapter"`: an adapter the core calls on its own path, under §2a |
-| an ordinary plugin | Any plugin that is not an adapter plugin |
+| a cycle plugin | A plugin of `kind: "cycle"`: code the host loads into the agent of a cycle, so the agent gains a feature, under §2b |
+| an ordinary plugin | Any plugin that is not an adapter plugin or a cycle plugin |
 
 ## 2. The guarantees
 
 A host gives every ordinary plugin, and every person on the host, these.
-An adapter plugin keeps them except where §2a says otherwise.
+An adapter plugin keeps them except where §2a says otherwise, a cycle
+plugin except where §2b says otherwise.
 
 1. **Off unless asked.** With plugins off, nothing is fetched, vetted or
    run, and nothing of plugins shows.
@@ -175,6 +177,72 @@ from the binary at vetting.
 *Patterns* ([patterns.md](patterns.md) §2, §8): ports and adapters, anti-corruption layer, capabilities
 and least authority.
 
+## 2b. Cycle plugins
+
+A cycle plugin adds a feature to the agent that works a cycle: a check on
+each file the agent writes, say, or a feature the agent's own release does
+not have yet. The host loads it into that agent, inside the cycle, and
+nowhere else.
+
+- **Blessed only.** A cycle plugin exists only in a blessed plugin (§11).
+  Code inside the agent's process cannot be fenced by grants, so it is
+  trusted like the host's own. A host refuses any other plugin of
+  `kind: "cycle"`.
+- **Inside the cycle, by the admin's choice.** Guarantee 5 binds ordinary
+  plugins: a cycle plugin runs inside a cycle. A cycle is given a cycle
+  plugin only when an admin turned it on for that host, or when the host
+  runs a release's default entry for it (below); never because some other
+  plugin is on.
+- **Under the plugins switch.** Guarantee 1 holds: with plugins off, no
+  cycle plugin is fetched or loaded, and a cycle runs as it would without
+  them.
+- **Contained by the cycle.** Guarantee 11 holds: the host's own processes
+  never load it. It runs in the cycle's sandbox, as the cycle's user, under
+  the cycle's limits, network rules and credential, and gets nothing the
+  cycle does not already have. Its failure is that cycle's.
+- **No host API, no grants.** It does not run in the operator and imports
+  nothing of the host's worlds (§6). It asks only `cycle:<role>`, once for
+  each role of the agent it is loaded into (§5); the roles are the host's,
+  listed in its spec. It has no view, schedule, hook, tool, gate or model
+  budget of its own.
+- **Writes only as the cycle does.** Guarantee 8 binds ordinary plugins:
+  a cycle plugin acts through the agent, so what it changes is the cycle's
+  work, under every rule the cycle's work is under, the cycle's review and
+  gate included.
+- **Approval stays a person's** (guarantee 9) holds: a cycle plugin never
+  approves or merges, and gives the agent no way to.
+- **Never in a role that reviews.** A host never loads a cycle plugin into
+  a role that reviews or judges the cycle's work, whatever its manifest
+  asks: a plugin inside the agent can bend the agent's output, and the
+  review is what checks that output. A host's spec names which of its
+  roles review, and refuses `cycle:<role>` for them.
+- **Named in the cycle's record.** The record of every cycle names each
+  cycle plugin it loaded, by repository and commit, and each one it
+  skipped, with why.
+- **Fetched before, never during.** The host puts the pinned `dist/agent/`
+  in the cycle's sandbox, read only, before the cycle starts. Nothing of a
+  cycle plugin is downloaded while the cycle runs. The tools it calls
+  (language servers, linters) come from the host's sandbox, never from the
+  plugin's own downloads.
+- **Refused or unreachable is skipped, and said.** Guarantee 4 holds: the
+  cycle runs without it, and the cycle's record names the plugin and why.
+- **A release may ship a default entry.** As for adapter plugins (§2a),
+  guarantee 2's "on no host release" binds ordinary plugins: a host release
+  may ship a default vetted-list entry for our own cycle plugin, which an
+  admin can turn off. Being blessed, it changes only with a release's
+  default entry or an admin's pin.
+- Pinned and vetted (2), fail closed (3), removable (12) and
+  the hardening of §14 that applies to it hold in full.
+
+*Checked:* the host refuses `kind: "cycle"` from a plugin that is not
+blessed, and `cycle:<role>` for a role that reviews; its tests show a cycle
+with plugins off loads none, a cycle loads only the cycle plugins turned on
+for its roles, and a cycle with a refused cycle plugin runs without it and
+records why.
+
+*Patterns* ([patterns.md](patterns.md) §7, §8): microkernel, capabilities and least authority,
+vet the artifact you run.
+
 ## 3. Layout, and who builds
 
 ```
@@ -186,6 +254,7 @@ dist/view/wasm/     WebAssembly modules the view runs in the browser
 dist/vendor/<lib>/  verified third-party libraries
 dist/wasm/          WebAssembly modules the driver runs
 dist/test/          built tests
+dist/agent/         a cycle plugin's package, as the agent loads it (§2b)
 skills/             skill files
 ```
 
@@ -214,11 +283,14 @@ in step is the builder's CI job (coding standard R14).
 - The exact keys are the host's schema's; this list is what every host's
   manifest names.
 - It names: the plugin's `name`, `label` and `kind` (`adapter` for an
-  adapter plugin, §2a; other kinds are the host's); the revision of the
+  adapter plugin, §2a; `cycle` for a cycle plugin, §2b; other kinds are
+  the host's); the revision of the
   host's spec it was built against (`spec`), which its tags state; the
   `runtime` (`"starlingmonkey"`, the engine, the only value for an
   ordinary plugin with this version; `"component"` for an adapter plugin
-  built as one component, §8); the `timeout` of a run; what it `asks`;
+  built as one component, §8; none for a cycle plugin, which names
+  instead the `agent` it is loaded into and its entry under `dist/agent/`,
+  the values the host's, §12); the `timeout` of a run; what it `asks`;
   its views; the named `actions` a view may press, each with a JSON
   Schema for its arguments; its skill files, under `skills/`; each
   WebAssembly module by name, the driver's apart from the view's, with an
@@ -259,7 +331,8 @@ does not fit, and an unknown `"plugin"` number.
   gives a view: the login of the person who pressed, taken from that
   press's own session, never from the message; a run that holds it can't
   keep it, record it, file issues or call the model; `http`, for an adapter
-  plugin only (§2a), refused to any other; `device:<feature>`, one
+  plugin only (§2a), refused to any other; `cycle:<role>`, for a cycle
+  plugin only (§2b), refused to any other; `device:<feature>`, one
   browser device or powerful feature for a view (§14). A host may add its
   own; it lists them in its spec.
 - **Grants an admin gives by hand.** Turning a plugin on never gives a grant
@@ -268,7 +341,9 @@ does not fit, and an unknown `"plugin"` number.
     refused);
   - `phase:<id>` (policy `pass` or `hold`);
   - `answer:<kind>` (one plugin per kind; a person's answer always wins);
-  - `device:<feature>` (the browser still asks the person, §14).
+  - `device:<feature>` (the browser still asks the person, §14);
+  - `cycle:<role>` (a release's default entry for our own cycle plugin
+    excepted, §2b).
 
   A review lists them apart, as "needs your grant".
 - **Our own plugins:** turning one on gives the grants of its vetted entry,
@@ -389,8 +464,14 @@ plugin that fails:
 - **Grant fit.** Every host function `dist/` calls is covered by the
   manifest's asks.
 - **WebAssembly** follows §8.
-- **Size caps** for `dist/view/`, `dist/view/wasm/`, `dist/vendor/` and
-  `dist/wasm/`, set by the host.
+- **Size caps** for `dist/view/`, `dist/view/wasm/`, `dist/vendor/`,
+  `dist/wasm/` and `dist/agent/`, set by the host.
+- **A cycle plugin's package.** `dist/agent/` is loaded by the agent, not
+  the engine, so parse and imports are the agent's. Each third-party
+  package in it is named in the manifest's `vendor` and verified, not
+  read, by version, upstream and per-file hashes, native binaries
+  included; the rest is the plugin's own code and readable. It has no
+  install step: what the agent loads is what was vetted.
 - **Tests** in `dist/test/` pass in the engine, against fake host
   functions.
 
@@ -524,12 +605,37 @@ first.
   refuses a lower serial, and an expired or unsigned list turns
   auto-approval off. A host trusts the list only through its signature.
 - **Blessed plugins.** The owner may bless some of our own plugins, and
-  only those may hold adapters. Blessed code is trusted like the host's
+  only those may hold adapters or cycle plugins. Blessed code is trusted like the host's
   own, the truth of its answers included. It changes only at a host
   release (its default entry) or by an admin's pin, never by a newer
   signed entry on its own, and its repository requires a person's review
   of every change: the signing job checks that the merge of the commit it
   signs had a person's approving review, and signs nothing without one.
+- **What a blessing names.** A blessing is the owner's own act, never
+  delegated, and it is kept where changing it needs a person's review (a
+  gate file of the host's repository). It names:
+  - the repository by its code host's stable id, not only its name, so a
+    renamed repository keeps its blessing and a new repository that takes
+    an old name gets none;
+  - the kind it may be (`adapter`, `cycle`), and the most it may ask. A
+    blessed commit whose manifest asks beyond that, or names another kind,
+    is refused, not held for an admin.
+- **Only commits of the protected branch.** A blessed commit is reachable
+  from the repository's protected default branch and is in the signed list
+  as blessed. A host refuses a pin to any other commit of a blessed
+  repository, one reached through a fork or a branch included, rather than
+  trusting it.
+- **The reviewed tree is the merged tree.** The signing job compares the
+  tree of the commit it signs with the tree of the head the person
+  approved, and signs nothing when they differ: a squash, a rebase or a
+  batch merge that brought in anything unreviewed. A commit pushed to the
+  branch without a reviewed pull request is never signed as blessed. A
+  batch merge is signed only when every pull request in it was approved on
+  its final head.
+- **An expired list skips blessed entries too.** A host that holds an
+  expired or unsigned list keeps no blessed entry running on its own: an
+  adapter plugin's port fails as §2a says, a cycle plugin is skipped and
+  the cycle records it.
 - **The audit and the signing are apart.** The audit jobs that run
   plugin code have no signing identity, no secrets and no network. The
   one job that signs runs no plugin code.
@@ -548,7 +654,11 @@ first.
 
 *Checked:* the audit pipeline's record for each entry, its SLSA provenance,
 and the host's refusal of a lower serial, an expired list or an unsigned
-one, shown by its tests.
+one, shown by its tests. Its tests also show a blessed repository's commit
+refused when it is not on the protected branch, when its manifest asks
+beyond its blessing, and when the repository is not the blessed id; the
+signing job's tests show a tree mismatch and an unreviewed push left
+unsigned.
 
 *Patterns* ([patterns.md](patterns.md) §8): vet the artifact you run, defence in depth.
 
@@ -566,6 +676,8 @@ tehas-standard version it meets:
 - the vetted list's signing (tehas: Sigstore keyless, the allowed identity
   in `api/plugins-signers`), its audit pipeline, the fetch of private
   repositories;
+- the agents it loads cycle plugins into, their roles for `cycle:<role>`,
+  and how it puts `dist/agent/` in a cycle's sandbox (§2b);
 - its own extra grants and kinds.
 
 ## 13. A conformant plugin
@@ -589,6 +701,10 @@ tehas-standard version it meets:
       `http` and nothing a view, schedule, hook, tool or gate needs; built
       as JavaScript or as one component whose imports are exactly the
       adapter world.
+- [ ] A cycle plugin: on the vetted list, blessed for `kind: "cycle"`,
+      asks only `cycle:<role>` and never for a role that reviews;
+      `dist/agent/` holds the whole package, every third-party package in
+      it verified, and downloads nothing when it runs.
 
 ## 14. Hardening
 
@@ -603,6 +719,9 @@ every capability it hands out and checks it at run time.
   operator, and the adapter host for adapters) each run as an operating
   system user of their own, never the core's user, and reach the core
   only through its sockets.
+- **A cycle plugin is confined as the cycle is.** It runs in the cycle's
+  sandbox and never in a process of the host's; the host's confinement of
+  a cycle (its user, its network rules, its credential) is its boundary.
 - **Confined by the operating system, too.** A process that runs plugins
   and needs no network gets none, by a kernel rule, not only by the
   engine's interface; the one that serves `http.request` may send only to
@@ -758,7 +877,8 @@ timeouts and bulkheads, origin isolation.
   subjects are reserved now (§10); the mechanism is a later minor.
 - Whether `kind` is one shared list in this standard or each host's own,
   so whether one plugin can serve two hosts with one manifest name.
-  `adapter` is the standard's (§2a); the other kinds are still open.
+  `adapter` (§2a) and `cycle` (§2b) are the standard's; the other kinds
+  are still open.
 - Whether "signed in, always" (guarantee 7) stays a guarantee of the
   standard. It is drafted as one.
 - **The WASI version.** The engine imports WASI 0.2 interfaces (random,
