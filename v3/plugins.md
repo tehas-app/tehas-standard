@@ -219,6 +219,11 @@ nowhere else.
 - **Named in the cycle's record.** The record of every cycle names each
   cycle plugin it loaded, by repository and commit, and each one it
   skipped, with why.
+- **The host's settings win over the product's.** A product's own
+  configuration for a cycle plugin cannot turn on, for that plugin, what
+  the host has off: installs, project-local binaries and network access
+  keep the host's setting for a cycle plugin whatever the product's file
+  asks. The host's spec names these switches (§12).
 - **Fetched before, never during.** The host puts the pinned `dist/agent/`
   in the cycle's sandbox, read only, before the cycle starts. Nothing of a
   cycle plugin is downloaded while the cycle runs. The tools it calls
@@ -237,8 +242,12 @@ nowhere else.
 *Checked:* the host refuses `kind: "cycle"` from a plugin that is not
 blessed, and `cycle:<role>` for a role that reviews; its tests show a cycle
 with plugins off loads none, a cycle loads only the cycle plugins turned on
-for its roles, and a cycle with a refused cycle plugin runs without it and
-records why.
+for its roles, a cycle with a refused cycle plugin runs without it and
+records why, and a product's own config turns on neither installs,
+project-local binaries nor network for a cycle plugin the host has off.
+Vetting's tests show a package refused on a registry-hash mismatch, on a
+provenance that does not verify where one is published, and on an advisory
+that flags a pinned package.
 
 *Patterns* ([patterns.md](patterns.md) §7, §8): microkernel, capabilities and least authority,
 vet the artifact you run.
@@ -470,7 +479,14 @@ plugin that fails:
   the engine, so parse and imports are the agent's. Each third-party
   package in it is named in the manifest's `vendor` and verified, not
   read, by version, upstream and per-file hashes, native binaries
-  included; the rest is the plugin's own code and readable. It has no
+  included; the rest is the plugin's own code and readable. Vetting checks
+  each package further, package by package, so a person's approval of a
+  version bump covers the version change and these checks cover the
+  files: the bytes match the registry's own integrity hash for that exact
+  published version (npm: the registry's `sha512` for the tarball); the
+  package's signed build provenance is verified where the package
+  publishes one; and the lockfile the tree was installed from passes an
+  advisory scan for the packages it pins. It has no
   install step: what the agent loads is what was vetted.
 - **Tests** in `dist/test/` pass in the engine, against fake host
   functions.
@@ -608,9 +624,20 @@ first.
   only those may hold adapters or cycle plugins. Blessed code is trusted like the host's
   own, the truth of its answers included. It changes only at a host
   release (its default entry) or by an admin's pin, never by a newer
-  signed entry on its own, and its repository requires a person's review
-  of every change: the signing job checks that the merge of the commit it
-  signs had a person's approving review, and signs nothing without one.
+  signed entry on its own, and its repository requires an approving
+  review of every change by the reviewing account (below): the signing job
+  checks that the merge of the commit it signs had an approving review by
+  exactly that account, on the head whose tree it signs, and signs nothing
+  without one.
+- **The reviewing account.** Each host names one reviewing account: a
+  person's own account of the repository owner's, to which no agent ever
+  holds a credential, held with a hardware key and never signed in where
+  agents run. The host keeps its account name and the code host's
+  immutable account id in a gate file of its repository. An approving
+  review counts for a blessing, for a release's default-entry file, and
+  for the other gate files only when it comes from that account; an
+  approval by any other account does not count, whatever its account type,
+  because a person's agents may sign in as that person.
 - **What a blessing names.** A blessing is the owner's own act, never
   delegated, and it is kept where changing it needs a person's review (a
   gate file of the host's repository). It names:
@@ -620,6 +647,12 @@ first.
   - the kind it may be (`adapter`, `cycle`), and the most it may ask. A
     blessed commit whose manifest asks beyond that, or names another kind,
     is refused, not held for an admin.
+- **The default-entry file is a gate file.** A release ships its default
+  entries for blessed plugins in a file of the host's repository. A
+  default entry lets a blessed commit run on every host of that release,
+  so it blesses a commit as the blessing itself does, and the file needs
+  the same review as the blessing: a gate file, with the reviewing
+  account's code-owner approval.
 - **Only commits of the protected branch.** A blessed commit is reachable
   from the repository's protected default branch and is in the signed list
   as blessed. A host refuses a pin to any other commit of a blessed
@@ -639,6 +672,17 @@ first.
 - **The audit and the signing are apart.** The audit jobs that run
   plugin code have no signing identity, no secrets and no network. The
   one job that signs runs no plugin code.
+- **The host protects its own default branch.** All of the above rests on
+  the host's own repository, so its protection is rules, not habit: the
+  default branch has an active branch ruleset that requires a pull request
+  before any merge, blocks deletion and force-push, and names no bypass
+  actor; the gate files (the blessing, the default-entry file, the signing
+  identities, the reviewing account, the audit pipeline, the release
+  workflow and the checker of these very rules) need the reviewing
+  account's code-owner approval; and a check of these settings runs in the
+  host's CI, on every pull request and on a schedule, and fails closed:
+  protection found off, a bypass actor found, or a gate file without its
+  code owner fails the build rather than passes unnoticed.
 - **Provenance.** The audit pipeline's signed list and the host's engine
   release each carry SLSA v1.1 Build Level 2 provenance or better.
 - **Revocation.** A revoked commit is turned off at the next update, with
@@ -658,7 +702,10 @@ one, shown by its tests. Its tests also show a blessed repository's commit
 refused when it is not on the protected branch, when its manifest asks
 beyond its blessing, and when the repository is not the blessed id; the
 signing job's tests show a tree mismatch and an unreviewed push left
-unsigned.
+unsigned, and an approval by an account other than the reviewing account
+left unsigned. The settings check's own tests show it failing on a disabled
+ruleset, on a bypass actor, and on a gate file whose code-owner rule is
+off.
 
 *Patterns* ([patterns.md](patterns.md) §8): vet the artifact you run, defence in depth.
 
@@ -677,7 +724,8 @@ tehas-standard version it meets:
   in `api/plugins-signers`), its audit pipeline, the fetch of private
   repositories;
 - the agents it loads cycle plugins into, their roles for `cycle:<role>`,
-  and how it puts `dist/agent/` in a cycle's sandbox (§2b);
+  how it puts `dist/agent/` in a cycle's sandbox, and the settings whose
+  host value wins over a product's for a cycle plugin (§2b);
 - its own extra grants and kinds.
 
 ## 13. A conformant plugin
