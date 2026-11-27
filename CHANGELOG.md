@@ -2,6 +2,16 @@
 
 ## v3 (draft)
 
+- Plugin standard, ready to tag: each section says how it is checked
+  and names its patterns; `issue:advisory` and `feed:advisories` leave
+  v3 for a later minor, and guarantee 8 names the writes a plugin makes
+  (its `/out`, its `/state`, an adapter's for the core);
+  `device:<feature>` joins the grants, given by an admin; any plugin
+  that asks `http` or `net:` lists its origins in the manifest; an
+  endpoint plugin is exempt from the code rules; a view's GraphQL reads
+  are one query, never a mutation, under the host's caps; a view gets
+  `net:` once the host's spec says how it was checked; the `"v2"` bridge
+  for our own plugins is gone, since §11 vets only at `"v3"` or later.
 - The v3 architecture script (`tools/architecture.py`, `# tehas-standard
   v3`), after `v3/architecture-script.md`: it knows `v1`, `v2`, `v3` and
   every minor of v2 and v3 (`vN.M`, M from 1), enforces from v2 on in
@@ -109,8 +119,8 @@
   the kit; WebAssembly modules as pure compute; trust through a signed
   vetted list for our own plugins and a person's approval for the rest;
   grants an admin gives by hand for anything on a person's path.
-  (`issue:advisory` and `feed:advisories` come with guard's pull request;
-  `issue:advisory` waits for the owner's OK there.)
+  (`issue:advisory` and `feed:advisories` are not in v3; they wait for
+  the owner's decision and a later minor.)
 - External contracts: the plugin host API, the vetted list and plugin
   surface requests join the catalogue.
 - Repository conventions move to their own page, with the `types` and

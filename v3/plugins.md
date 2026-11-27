@@ -6,8 +6,8 @@ refuses a manifest number it does not know. tehas's own plugin
 specification (2.0.0, "the operator") is the first host's implementation
 of it; what is only that host's is in §12.
 
-Plugins are additional capability for the core, mostly UI and integration
-glue, not an application platform.
+*Informative:* plugins are additional capability for the core, mostly UI
+and integration glue, not an application platform.
 
 ## Conformance language
 
@@ -77,9 +77,8 @@ An adapter plugin keeps them except where §2a says otherwise.
    signs a person in is its own.)
 8. **Writes only through the host.** A plugin never writes to the product,
    the code host or the host's store; the host writes what a run returns.
-   The one exception planned is `issue:advisory` (§5), an admin's
-   grant, waiting for the owner's OK, which is decided in guard's pull
-   request.
+   A plugin writes only its own `/out`, and `/state` with `keep` (§6). An
+   adapter plugin carries out the core's writes, and only those (§2a).
 9. **Approval stays a person's.** A plugin never approves or merges the
    host's work and never removes a person's approval; there is no merge
    grant.
@@ -95,6 +94,14 @@ An adapter plugin keeps them except where §2a says otherwise.
 Guarantees 1 to 8, 12 and 13 carry tehas's 1.x plugin guarantees into
 this version, as plugin spec 2.0.0 reshapes them. 9 is tehas's hard rule 5, which plugin spec 2.0.0 keeps. 10
 and 11 are plugin spec 2.0.0's (its decisions 30 and 32).
+
+*Checked:* a host's tests show each guarantee on a running host: plugins
+off fetch nothing, an unapproved commit does not run, a malformed setting
+stops the load, a refused plugin is skipped, an ungranted call is refused,
+a gate with no answer holds. Its spec names the test of each.
+
+*Patterns* ([patterns.md](patterns.md) §3, §4, §7, §8): fail closed, timeouts and bulkheads, microkernel,
+capabilities and least authority, vet the artifact you run.
 
 ## 2a. Adapter plugins
 
@@ -160,6 +167,14 @@ the core's own code, delivered apart.
 - Pinned and vetted (2), fail closed (3), contained (11) and the
   hardening of §14 hold in full.
 
+*Checked:* the host refuses `kind: "adapter"` from a plugin that is not
+blessed; its request gate refuses a request outside the routes of the port
+call in flight, and its tests show both. The component's imports are listed
+from the binary at vetting.
+
+*Patterns* ([patterns.md](patterns.md) §2, §8): ports and adapters, anti-corruption layer, capabilities
+and least authority.
+
 ## 3. Layout, and who builds
 
 ```
@@ -186,6 +201,11 @@ skills/             skill files
 - **Types** come from the host: `tehas.d.ts`, generated from the host API
   (§6), and the kit's `kit.d.ts` and `solid.d.ts`.
 
+*Checked:* the host's checks of §7 run on `dist/` only; `src/` and `dist/`
+in step is the builder's CI job (coding standard R14).
+
+*Patterns* ([patterns.md](patterns.md) §8): vet the artifact you run.
+
 ## 4. The manifest
 
 - One JSON file, `tehas-plugin.json`, under a closed schema the host
@@ -203,8 +223,9 @@ skills/             skill files
   Schema for its arguments; its skill files, under `skills/`; each
   WebAssembly module by name, the driver's apart from the view's, with an
   optional source path and build recipe; each vendor library with its
-  version, upstream and per-file hashes; for an adapter plugin, the
-  `origins` it may reach, each with whether the credential may go to it;
+  version, upstream and per-file hashes; for a plugin that asks `http` or
+  `net:`, the `origins` it may reach (§6), each with its `methods`, its
+  body policy and whether the credential may go to it;
   the `solid-js` version its compiled view expects; its schedules
   (`every:`, `clock:`); its hook points.
 - **Not yet in the manifest:** its licence. Guarantee 13 holds (any
@@ -213,7 +234,14 @@ skills/             skill files
 - An endpoint plugin (a model provider) is a manifest only: id, API shape
   (`openai-completions` or `anthropic-messages`) and models. Its address
   comes from the host's or the industry's settings, never from the
-  plugin.
+  plugin. It has no code, so the rules on `src/`, `dist/`, modules and
+  tests (§3, §7, §8 and those items of §13) do not apply to it; the rest
+  do.
+
+*Checked:* the host's closed schema in its `api/` refuses a manifest that
+does not fit, and an unknown `"plugin"` number.
+
+*Patterns* ([patterns.md](patterns.md) §3): parse, don't validate; schema first; fail closed.
 
 ## 5. Capabilities and grants
 
@@ -222,7 +250,7 @@ skills/             skill files
   not know.
 - The common names: input grants (`product`, `history`, `files`,
   `cycles`, `issues`, `pages`, `live:<feed>`, `feed:<feed>`,
-  `industry:logs`; `feed:advisories`, which comes with guard's pull request); `keep` (a
+  `industry:logs`); `keep` (a
   private `/state`); `model:<tokens>` (a token budget per run), with
   `model:images`; `view`, `menu`, `action:<id>`; `every:<interval>` and
   `clock:<when>`; `hook:<when>:<event>`; `tool:<id>`; `record`;
@@ -231,24 +259,28 @@ skills/             skill files
   gives a view: the login of the person who pressed, taken from that
   press's own session, never from the message; a run that holds it can't
   keep it, record it, file issues or call the model; `http`, for an adapter
-  plugin only (§2a), refused to any other. A host may add its own; it lists them in its spec.
+  plugin only (§2a), refused to any other; `device:<feature>`, one
+  browser device or powerful feature for a view (§14). A host may add its
+  own; it lists them in its spec.
 - **Grants an admin gives by hand.** Turning a plugin on never gives a grant
   that holds or acts on a person's path:
   - `hook:before:<event>=<policy>` (a gate; a gate grant with no policy is
     refused);
   - `phase:<id>` (policy `pass` or `hold`);
   - `answer:<kind>` (one plugin per kind; a person's answer always wins);
-  - `issue:advisory`, waiting for the owner's OK, decided in guard's pull
-    request
-    (files one issue with public facts only: package,
-    advisory id and link, installed and fixed versions; one open issue per
-    package and advisory, a daily cap).
+  - `device:<feature>` (the browser still asks the person, §14).
 
   A review lists them apart, as "needs your grant".
 - **Our own plugins:** turning one on gives the grants of its vetted entry,
   less those above. A later commit that asks for more waits for the admin;
   the host keeps running the last commit that fits.
 - **Third-party plugins:** the admin gives each grant.
+
+*Checked:* the host refuses a name it does not know; its tests show that
+turning a plugin on gives none of the grants an admin gives by hand, and
+that a commit asking for more keeps the last commit that fits running.
+
+*Patterns* ([patterns.md](patterns.md) §8): capabilities and least authority.
 
 ## 6. The host API
 
@@ -267,7 +299,7 @@ skills/             skill files
   | `model.chat(req)` | `model:<tokens>` (images: `model:images`) |
   | `run.module(path, argv, env)` | always |
   | `wasm.load(name)` | a module the manifest lists |
-  | `http.request(req)` | `http`: an adapter plugin only (§2a); or `net:`, an ordinary plugin's driver; to its destinations (§6) |
+  | `http.request(req)` | `http`: an adapter plugin only (§2a); or `net:`, an ordinary plugin's driver; to its destinations (below) |
   | `log(...)` | always |
 
   The engine's own web APIs (`crypto.subtle.digest`,
@@ -331,6 +363,14 @@ skills/             skill files
 - New host functions come through a plugin surface request and are added
   only (contracts C4).
 
+*Checked:* the host's side and `tehas.d.ts` are generated from the WIT in
+its `api/`, and its surface list for the WIT package only grows within a
+major (contracts C3, C4). The request gate's tests show a request outside a
+plugin's destinations refused, from either side.
+
+*Patterns* ([patterns.md](patterns.md) §3, §5, §8): schema first, parallel change, capabilities and
+least authority, sandboxing in WebAssembly.
+
 ## 7. What `dist/` must be
 
 A host checks `dist/` before it runs or serves anything, and refuses a
@@ -353,6 +393,12 @@ plugin that fails:
   `dist/wasm/`, set by the host.
 - **Tests** in `dist/test/` pass in the engine, against fake host
   functions.
+
+*Checked:* by the host's check of `dist/` (tehas: `tehas plugin check`),
+which runs at vetting and before every deploy, and in the builder's CI.
+
+*Patterns* ([patterns.md](patterns.md) §6, §8): vet the artifact you run, test at the interface, with
+fakes.
 
 ## 8. WebAssembly modules
 
@@ -399,6 +445,11 @@ plugin that fails:
   module, in a worker. A hot path several plugins share is asked of the
   host.
 
+*Checked:* a module's imports, exports, features and name section are read
+from the binary at every deploy; the rebuild from source runs at vetting.
+
+*Patterns* ([patterns.md](patterns.md) §8): sandboxing in WebAssembly, vet the artifact you run.
+
 ## 9. Views
 
 - **The origin is the boundary.** A view is served by the host on an origin
@@ -428,6 +479,12 @@ plugin that fails:
   does not import the kit. A vendored `.wasm` is verified by its upstream
   hash in place of a name section.
 
+*Checked:* the host checks each compiled import against the kit's export
+list and the manifest's `solid-js` version against its kit; the frame's
+policy is written by the host, from hashes.
+
+*Patterns* ([patterns.md](patterns.md) §9): islands architecture, origin isolation.
+
 ## 10. Events
 
 - **Names in the ports' words.** The host's event list is in its `api/`
@@ -446,6 +503,12 @@ plugin that fails:
   either. On a page they are `plugin-<name>:<event>`, never `tehas:`. How a
   plugin declares its events and their schemas, and how a host carries
   them to other plugins and pages, is not yet specified (see Open).
+
+*Checked:* the host's event list is a surface list that only grows; a test
+of it shows no event under `plugin-` or `annex-` (contracts §2).
+
+*Patterns* ([patterns.md](patterns.md) §3, §7): event notification and hooks, tolerant reader, pull
+first.
 
 ## 11. Trust
 
@@ -483,6 +546,12 @@ plugin that fails:
   `vetted` only at `[standard] version` `"v3"` or later, with its
   architecture test green at the vetted commit.
 
+*Checked:* the audit pipeline's record for each entry, its SLSA provenance,
+and the host's refusal of a lower serial, an expired list or an unsigned
+one, shown by its tests.
+
+*Patterns* ([patterns.md](patterns.md) §8): vet the artifact you run, defence in depth.
+
 ## 12. What a host keeps in its own spec
 
 Not in this standard; each host specifies its own and names the
@@ -513,9 +582,9 @@ tehas-standard version it meets:
       upstream hash) and, for our own, rebuild to the same bytes.
 - [ ] Its tests run in the engine with fake host functions.
 - [ ] It reaches models only through `model.chat`.
-- [ ] Our own: `tehas.toml` at the root, at `"v3"`, architecture test
-      green. Until v3 is tagged, `"v2"` is the bridge. A third-party
-      plugin SHOULD keep the same file.
+- [ ] Our own: `tehas.toml` at the root, at `"v3"` or later,
+      architecture test green. A third-party plugin SHOULD keep the same
+      file.
 - [ ] An adapter plugin: on the vetted list, `kind: "adapter"`, asks
       `http` and nothing a view, schedule, hook, tool or gate needs; built
       as JavaScript or as one component whose imports are exactly the
@@ -641,13 +710,16 @@ every capability it hands out and checks it at run time.
   token and no CORS answer. The kit maps a URL to an origin id (a
   relative one to `parent`) and an unmapped URL is refused. No `Cookie`
   or `Authorization` comes from the view, and no `Set-Cookie` goes back.
-  A host specifies a view's network in its own spec once its browser
-  checks (H8 to H10) are done; until then it gives no view `net:`.
+  A host gives a view `net:` only once its own spec says how a view's
+  network runs and how it was checked in the browsers it supports; until
+  then it gives no view `net:`.
   A view gets no credential, with one kind of exception, for our own
   signed plugins only: an origin the vetted entry marks for a view
   credential gets a read-only credential
-  narrowed to the one target, for free-form reads only (one read
-  operation per request, a depth and a cost cap, a budget per load);
+  narrowed to the one target, for reads only. Unlike an adapter's
+  persisted operations (§2a), a view's GraphQL read may be a query the
+  view writes: one query operation per request, never a mutation, under a
+  depth and a cost cap the host sets, and a budget per load;
   writes from a view go only through persisted `actions` with the
   person's confirm.
 - **Devices take two keys.** Every device and powerful feature is denied by
@@ -671,6 +743,13 @@ every capability it hands out and checks it at run time.
 - **A result reaches the host only through the host element**, under a
   grant, checked for type and size. A plugin never uploads anything itself.
 
+*Checked:* each item is a host test, on the operator and in the browsers
+the host supports; the host's spec lists how it confines each process and
+which test shows each item.
+
+*Patterns* ([patterns.md](patterns.md) §4, §8, §9): defence in depth, sandboxing in WebAssembly,
+timeouts and bulkheads, origin isolation.
+
 ## Open for the owner
 
 - **Plugin events carried by the host.** A manifest field declaring a
@@ -681,10 +760,17 @@ every capability it hands out and checks it at run time.
   so whether one plugin can serve two hosts with one manifest name.
   `adapter` is the standard's (§2a); the other kinds are still open.
 - Whether "signed in, always" (guarantee 7) stays a guarantee of the
-  standard. It is drafted as one, the session's recommendation.
+  standard. It is drafted as one.
 - **The WASI version.** The engine imports WASI 0.2 interfaces (random,
   clocks, poll), while wasi.dev lists WASI 0.3 as current and 0.2 as
-  superseded (checked 2026-11-25). The standard names no WASI version; the
-  host's spec says which it imports, and moving it is the host's change.
+  superseded (checked 2026-11-25). The standard names WASI only for a
+  module's imports (§8: preview 1 for a driver's core module; random and
+  the clocks for an adapter component). Which version the engine imports
+  is the host's spec, and moving it is the host's change.
 - Whether a second plugin host meets this standard in v3 or in a later
   version.
+- **Advisory grants.** `issue:advisory`, an admin's grant to file one
+  issue per package and advisory with public facts only (package, advisory
+  id and link, installed and fixed versions; a daily cap), and the input
+  grant `feed:advisories` it reads. Not in v3; a later minor adds them
+  once the owner decides.
