@@ -2,6 +2,13 @@
 
 ## v3 (draft)
 
+- Cycle plugins (plugin standard §2b): a blessed plugin of `kind:
+  "cycle"` that the host loads into the agent of a cycle, so the agent
+  gains a feature, under one term with every other plugin. It runs in the
+  cycle's sandbox, never in the host's processes; it asks only
+  `cycle:<role>`, given by an admin or a release's default entry; its
+  `dist/agent/` package is vetted whole and fetched before the cycle,
+  never during it. Guarantee 5 binds ordinary plugins, as for adapters.
 - Plugin standard, ready to tag: each section says how it is checked
   and names its patterns; `issue:advisory` and `feed:advisories` leave
   v3 for a later minor, and guarantee 8 names the writes a plugin makes
